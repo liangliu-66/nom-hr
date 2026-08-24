@@ -110,7 +110,7 @@
     .cal-day.has-logs { font-weight: bold; }
     .cal-day.empty { background: transparent; border: none; cursor: default; }
 
-    /* MANSIONI */
+    /* MANSIONI & MERCE */
     .task-card { padding: 16px; border-radius: 8px; color: white; cursor: pointer; transition: transform 0.1s; display: flex; flex-direction: column; justify-content: space-between; min-height: 120px; position: relative; }
     .task-card.pending { background-color: var(--absent); }
     .task-card.done { background-color: var(--present); }
@@ -118,6 +118,9 @@
     .task-card .assignees { font-size: 0.85rem; opacity: 0.95; margin-top: 8px; }
     .task-delete-btn { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.2); border: none; color: white; border-radius: 4px; width: 24px; height: 24px; font-weight: bold; cursor: pointer; line-height: 20px; }
     .task-delete-btn:hover { background: rgba(220, 38, 38, 0.8); }
+
+    .goods-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; }
+    .goods-item.checked span { text-decoration: line-through; color: #94a3b8; }
 
     .chat-box { background: #f8fafc; border: 1px solid var(--border); border-radius: 6px; padding: 12px; height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
     .chat-msg { background: white; border: 1px solid var(--border); padding: 8px 12px; border-radius: 6px; font-size: 0.88rem; }
@@ -144,6 +147,7 @@
   <div class="nav-list">
     <button class="tab-btn active" onclick="switchTab('kiosk')">Kiosk Clock In</button>
     <button class="tab-btn" onclick="switchTab('mansioni')">Mansioni</button>
+    <button class="tab-btn" onclick="switchTab('merce')">Merce</button>
     <button class="tab-btn" onclick="switchTab('ruota')">Ruota</button>
     <button class="tab-btn" onclick="requestAdminAccess('dipendenti')">Anagrafica Dipendenti 🔒</button>
     <button class="tab-btn" onclick="requestAdminAccess('presenze')">Registro Calendario 🔒</button>
@@ -192,7 +196,7 @@
     </div>
   </div>
 
-  <!-- TAB 2: MANSIONI (UNLOCKED) -->
+  <!-- TAB 2: MANSIONI -->
   <div id="tab-mansioni" class="tab-content">
     <div class="grid-2">
       <div>
@@ -227,14 +231,52 @@
     </div>
   </div>
 
-  <!-- TAB 3: RUOTA DELLA FORTUNA -->
+  <!-- TAB NUOVO: MERCE -->
+  <div id="tab-merce" class="tab-content">
+    <div class="grid-2">
+      <div>
+        <div class="card">
+          <h3>Aggiungi Articolo da Comprare</h3>
+          <form onsubmit="addGoodsItem(event)" style="display:flex; gap:10px; margin-top:10px;">
+            <input type="text" id="new-goods-title" placeholder="Es. Tovaglioli, Olio d'oliva..." style="flex:1;" required>
+            <button type="submit">Aggiungi</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <h3>Lista Spesa / Merce</h3>
+          <p style="color: #64748b; font-size: 0.85rem; margin-bottom: 12px;">Spunta le voci acquistate. Quelle spuntate vengono rimosse alle 23:00.</p>
+          <div id="goods-list"></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <h3>Registro Merce / Mini-Chat</h3>
+          <p style="color: #64748b; font-size: 0.85rem; margin-bottom: 10px;">Cronologia attività spesa (si azzera ogni giorno alle 23:00).</p>
+          <div id="goods-chat" class="chat-box"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: RUOTA DELLA FORTUNA CON STORICO -->
   <div id="tab-ruota" class="tab-content">
     <div class="grid-2">
-      <div class="card">
-        <h3>Seleziona Dipendenti per la Ruota</h3>
-        <p style="color: #64748b; font-size: 0.85rem; margin-bottom: 12px;">Spunta chi desideri inserire nell'estrazione casuale.</p>
-        <div id="wheel-emp-checklist" style="display:flex; flex-direction:column; gap:8px; max-height:300px; overflow-y:auto; margin-bottom:15px;"></div>
-        <button onclick="drawWheel()" style="width:100%;">Aggiorna Ruota</button>
+      <div>
+        <div class="card">
+          <h3>Seleziona Dipendenti per la Ruota</h3>
+          <p style="color: #64748b; font-size: 0.85rem; margin-bottom: 12px;">Spunta chi desideri inserire nell'estrazione casuale.</p>
+          <div id="wheel-emp-checklist" style="display:flex; flex-direction:column; gap:8px; max-height:200px; overflow-y:auto; margin-bottom:15px;"></div>
+          <button onclick="drawWheel()" style="width:100%;">Aggiorna Ruota</button>
+        </div>
+
+        <!-- STORICO ESTRAZIONI RUOTA -->
+        <div class="card">
+          <h3>📜 Storico Estrazioni Odierne</h3>
+          <p style="color: #64748b; font-size: 0.85rem; margin-bottom: 10px;">Si azzera automaticamente ogni giorno alle 23:00.</p>
+          <div id="wheel-history" class="chat-box" style="height: 180px;"></div>
+        </div>
       </div>
 
       <div class="card" style="text-align: center;">
@@ -348,15 +390,30 @@
     </div>
   </div>
 
-  <!-- TAB 7: IMPOSTAZIONI PIN -->
+  <!-- TAB 7: IMPOSTAZIONI PIN & BACKUP -->
   <div id="tab-settings" class="tab-content">
-    <div class="card" style="max-width: 400px;">
-      <h3>Modifica PIN Amministratore</h3>
-      <form onsubmit="changePin(event)" style="display: flex; flex-direction: column; gap: 12px; margin-top: 12px;">
-        <input type="password" id="old-pin" placeholder="PIN Attuale" required>
-        <input type="password" id="new-pin" placeholder="Nuovo PIN" required>
-        <button type="submit">Aggiorna PIN</button>
-      </form>
+    <div class="grid-2">
+      <div class="card">
+        <h3>Modifica PIN Amministratore</h3>
+        <form onsubmit="changePin(event)" style="display: flex; flex-direction: column; gap: 12px; margin-top: 12px;">
+          <input type="password" id="old-pin" placeholder="PIN Attuale" required>
+          <input type="password" id="new-pin" placeholder="Nuovo PIN" required>
+          <button type="submit">Aggiorna PIN</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h3>💾 Backup e Ripristino Dati</h3>
+        <p style="color: #64748b; font-size: 0.85rem; margin-top: 4px; margin-bottom: 16px;">
+          Salva una copia di sicurezza di tutti i dati (dipendenti, presenze, turni, merce) per prevenire perdite.
+        </p>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <button onclick="downloadBackup()" style="background: var(--present); padding: 12px;">📥 Scarica File di Backup</button>
+          <hr style="border: 0; border-top: 1px solid var(--border); margin: 4px 0;">
+          <label style="display: block; font-weight: bold; font-size: 0.9rem;">📤 Ripristina da File Backup:</label>
+          <input type="file" id="backup-file-input" accept=".json" onchange="uploadBackup(event)">
+        </div>
+      </div>
     </div>
   </div>
 </main>
@@ -446,7 +503,10 @@
     { id: 2, title: 'Controllo Magazzino', assignees: [], done: false }
   ];
   let taskLogs = JSON.parse(localStorage.getItem('hr_task_logs')) || [];
-  let lastChatResetDate = localStorage.getItem('hr_chat_reset_date') || '';
+  let goods = JSON.parse(localStorage.getItem('hr_goods')) || [];
+  let goodsLogs = JSON.parse(localStorage.getItem('hr_goods_logs')) || [];
+  let wheelHistory = JSON.parse(localStorage.getItem('hr_wheel_history')) || [];
+  let lastDailyResetDate = localStorage.getItem('hr_daily_reset_date') || '';
   let wheelEmployees = JSON.parse(localStorage.getItem('hr_wheel_emps')) || [];
 
   let pendingTab = null;
@@ -463,21 +523,35 @@
   let isSpinning = false;
   const wheelColors = ['#2563eb', '#16a34a', '#dc2626', '#d97706', '#9333ea', '#0891b2', '#e11d48', '#4d7c0f'];
 
-  // Clock
+  // Clock & Auto-Reset alle 23:00
   setInterval(() => {
     const now = new Date();
     document.getElementById('current-clock').textContent = now.toLocaleDateString('it-IT') + ' ' + now.toLocaleTimeString('it-IT');
-    checkChatAutoReset(now);
+    checkDailyAutoReset(now);
   }, 1000);
 
-  function checkChatAutoReset(now) {
+  function checkDailyAutoReset(now) {
     const todayStr = now.toISOString().split('T')[0];
-    if (now.getHours() >= 23 && lastChatResetDate !== todayStr) {
+    if (now.getHours() >= 23 && lastDailyResetDate !== todayStr) {
+      // 1. Reset mini-chat mansioni
       taskLogs = [];
       localStorage.setItem('hr_task_logs', JSON.stringify([]));
-      lastChatResetDate = todayStr;
-      localStorage.setItem('hr_chat_reset_date', todayStr);
-      renderTasks();
+
+      // 2. Reset storico ruota
+      wheelHistory = [];
+      localStorage.setItem('hr_wheel_history', JSON.stringify([]));
+
+      // 3. Reset merce spuntata (rimangono solo quelle non marcate)
+      goods = goods.filter(g => !g.checked);
+      localStorage.setItem('hr_goods', JSON.stringify(goods));
+      
+      // 4. Reset mini-chat merce
+      goodsLogs = [];
+      localStorage.setItem('hr_goods_logs', JSON.stringify([]));
+
+      lastDailyResetDate = todayStr;
+      localStorage.setItem('hr_daily_reset_date', todayStr);
+      renderAll();
     }
   }
 
@@ -568,7 +642,7 @@
     return null;
   }
 
-  // Richiesta di Clock In con Finestra di Conferma
+  // Clock In
   function performClockIn(empId) {
     if(isCooldown) return;
 
@@ -905,7 +979,80 @@
     document.getElementById('emp-tasks-summary-modal').style.display = 'none';
   }
 
-  // Ruota
+  // --- SEZIONE MERCE ---
+  function addGoodsItem(e) {
+    e.preventDefault();
+    const titleInput = document.getElementById('new-goods-title');
+    const title = titleInput.value.trim();
+
+    goods.push({ id: Date.now(), title, checked: false });
+    localStorage.setItem('hr_goods', JSON.stringify(goods));
+
+    const now = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+    goodsLogs.unshift({ time: now, msg: `Articolo aggiunto alla spesa: "${title}"` });
+    localStorage.setItem('hr_goods_logs', JSON.stringify(goodsLogs));
+
+    titleInput.value = '';
+    renderGoods();
+  }
+
+  function toggleGoodsItem(id) {
+    const item = goods.find(g => g.id === id);
+    if (!item) return;
+
+    item.checked = !item.checked;
+    localStorage.setItem('hr_goods', JSON.stringify(goods));
+
+    const now = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+    goodsLogs.unshift({ 
+      time: now, 
+      msg: item.checked ? `Articolo marcato come ACQUISTATO: "${item.title}"` : `Articolo DESELETZIONATO: "${item.title}"` 
+    });
+    localStorage.setItem('hr_goods_logs', JSON.stringify(goodsLogs));
+
+    renderGoods();
+  }
+
+  function deleteGoodsItem(id, event) {
+    event.stopPropagation();
+    const item = goods.find(g => g.id === id);
+    if (!item) return;
+
+    goods = goods.filter(g => g.id !== id);
+    localStorage.setItem('hr_goods', JSON.stringify(goods));
+
+    const now = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+    goodsLogs.unshift({ time: now, msg: `Articolo rimosso dalla lista: "${item.title}"` });
+    localStorage.setItem('hr_goods_logs', JSON.stringify(goodsLogs));
+
+    renderGoods();
+  }
+
+  function renderGoods() {
+    const listContainer = document.getElementById('goods-list');
+    if(goods.length === 0) {
+      listContainer.innerHTML = '<p style="color:#94a3b8; font-size:0.9rem; text-align:center;">Nessun articolo da comprare.</p>';
+    } else {
+      listContainer.innerHTML = goods.map(g => `
+        <div class="goods-item ${g.checked ? 'checked' : ''}">
+          <label style="display:flex; align-items:center; gap:12px; cursor:pointer; flex:1;">
+            <input type="checkbox" ${g.checked ? 'checked' : ''} onchange="toggleGoodsItem(${g.id})" style="width:18px; height:18px;">
+            <span style="font-size:1rem; font-weight:600;">${g.title}</span>
+          </label>
+          <button onclick="deleteGoodsItem(${g.id}, event)" style="background:#ef4444; padding:6px 12px; font-size:0.8rem;">Elimina</button>
+        </div>
+      `).join('');
+    }
+
+    const chatContainer = document.getElementById('goods-chat');
+    chatContainer.innerHTML = goodsLogs.length ? goodsLogs.map(l => `
+      <div class="chat-msg">
+        <span class="time">[${l.time}]</span> ${l.msg}
+      </div>
+    `).join('') : '<div style="color:#94a3b8; font-size:0.85rem; text-align:center; margin-top:20px;">Nessuna attività registrata.</div>';
+  }
+
+  // --- SEZIONE RUOTA ---
   function renderWheelChecklist() {
     const container = document.getElementById('wheel-emp-checklist');
     if(wheelEmployees.length === 0) wheelEmployees = employees.map(e => e.name);
@@ -1008,9 +1155,28 @@
     const winnerIndex = Math.floor(normalizedAngle / arcSize);
     const winner = wheelEmployees[winnerIndex];
 
+    const nowStr = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+    wheelHistory.unshift({ time: nowStr, winner: winner });
+    localStorage.setItem('hr_wheel_history', JSON.stringify(wheelHistory));
+
+    renderWheelHistory();
+
     setTimeout(() => {
       alert(`🎉 ESTRATTO CASUALMENTE: ${winner}!`);
     }, 100);
+  }
+
+  function renderWheelHistory() {
+    const historyContainer = document.getElementById('wheel-history');
+    if(wheelHistory.length === 0) {
+      historyContainer.innerHTML = '<div style="color:#94a3b8; font-size:0.85rem; text-align:center; margin-top:20px;">Nessuna estrazione effettuata oggi.</div>';
+    } else {
+      historyContainer.innerHTML = wheelHistory.map(h => `
+        <div class="chat-msg">
+          <span class="time">[${h.time}]</span> Estratto: <strong>🎉 ${h.winner}</strong>
+        </div>
+      `).join('');
+    }
   }
 
   // Modifica PIN
@@ -1028,6 +1194,74 @@
     localStorage.setItem('hr_pin', adminPin);
     alert('PIN aggiornato con successo!');
     e.target.reset();
+  }
+
+  // Backup & Ripristino Dati
+  function downloadBackup() {
+    const backupData = {
+      pin: adminPin,
+      employees: employees,
+      clockLogs: clockLogs,
+      shifts: shifts,
+      tasks: tasks,
+      taskLogs: taskLogs,
+      goods: goods,
+      goodsLogs: goodsLogs,
+      wheelHistory: wheelHistory,
+      wheelEmployees: wheelEmployees,
+      exportDate: new Date().toISOString()
+    };
+
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
+    const downloadAnchor = document.createElement('a');
+    const todayStr = new Date().toISOString().split('T')[0];
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", `backup_NOM_HR_${todayStr}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+  }
+
+  function uploadBackup(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const data = JSON.parse(e.target.result);
+        if (confirm("Attenzione: Il ripristino sovrascriverà i dati attuali con quelli del file selezionato. Continuare?")) {
+          if (data.pin) localStorage.setItem('hr_pin', data.pin);
+          if (data.employees) localStorage.setItem('hr_employees', JSON.stringify(data.employees));
+          if (data.clockLogs) localStorage.setItem('hr_logs', JSON.stringify(data.clockLogs));
+          if (data.shifts) localStorage.setItem('hr_shifts', JSON.stringify(data.shifts));
+          if (data.tasks) localStorage.setItem('hr_tasks_v2', JSON.stringify(data.tasks));
+          if (data.taskLogs) localStorage.setItem('hr_task_logs', JSON.stringify(data.taskLogs));
+          if (data.goods) localStorage.setItem('hr_goods', JSON.stringify(data.goods));
+          if (data.goodsLogs) localStorage.setItem('hr_goods_logs', JSON.stringify(data.goodsLogs));
+          if (data.wheelHistory) localStorage.setItem('hr_wheel_history', JSON.stringify(data.wheelHistory));
+          if (data.wheelEmployees) localStorage.setItem('hr_wheel_emps', JSON.stringify(data.wheelEmployees));
+
+          // Aggiorna variabili di stato
+          adminPin = localStorage.getItem('hr_pin') || '0104';
+          employees = JSON.parse(localStorage.getItem('hr_employees')) || [];
+          clockLogs = JSON.parse(localStorage.getItem('hr_logs')) || [];
+          shifts = JSON.parse(localStorage.getItem('hr_shifts')) || [];
+          tasks = JSON.parse(localStorage.getItem('hr_tasks_v2')) || [];
+          taskLogs = JSON.parse(localStorage.getItem('hr_task_logs')) || [];
+          goods = JSON.parse(localStorage.getItem('hr_goods')) || [];
+          goodsLogs = JSON.parse(localStorage.getItem('hr_goods_logs')) || [];
+          wheelHistory = JSON.parse(localStorage.getItem('hr_wheel_history')) || [];
+          wheelEmployees = JSON.parse(localStorage.getItem('hr_wheel_emps')) || [];
+
+          alert("Dati ripristinati con successo!");
+          renderAll();
+        }
+      } catch (err) {
+        alert("Errore durante la lettura del file di backup. Assicurati che sia un file .json valido.");
+      }
+    };
+    reader.readAsText(file);
   }
 
   // Esportazione
@@ -1292,7 +1526,9 @@
   function renderAll() {
     renderKioskGrid();
     renderTasks();
+    renderGoods();
     renderWheelChecklist();
+    renderWheelHistory();
     renderEmployeeTable();
     renderShiftsTable();
     renderCalendar();
