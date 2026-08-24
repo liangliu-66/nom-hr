@@ -184,6 +184,7 @@
       <button class="tab-btn" onclick="switchTab('mansioni')">Mansioni</button>
       <button class="tab-btn" onclick="switchTab('merce')">Merce</button>
       <button class="tab-btn" onclick="switchTab('ruota')">Ruota</button>
+      <button class="tab-btn" onclick="switchTab('riepilogo')">Riepilogo Mensile</button>
       <button class="tab-btn" onclick="requestAdminAccess('dipendenti')">Anagrafica Dipendenti 🔒</button>
       <button class="tab-btn" onclick="requestAdminAccess('presenze')">Registro Calendario 🔒</button>
       <button class="tab-btn" onclick="requestAdminAccess('turni')">Orari e Turni 🔒</button>
@@ -191,7 +192,6 @@
     </div>
   </div>
 
-  <!-- PULSANTE TEMA SCURO IN BASSO ALLA SIDEBAR -->
   <button class="theme-toggle-btn" onclick="toggleDarkMode()">
     <span id="theme-btn-icon">🌙</span> <span id="theme-btn-text">Tema Scuro</span>
   </button>
@@ -209,7 +209,7 @@
     Prossima timbratura disponibile tra <span id="cooldown-timer">5</span> secondi...
   </div>
 
-  <!-- TAB 1: KIOSK CLOCK IN (CON CLASSIFICA LATERALE) -->
+  <!-- TAB 1: KIOSK CLOCK IN -->
   <div id="tab-kiosk" class="tab-content active">
     <div class="grid-kiosk">
       <div class="card">
@@ -218,7 +218,6 @@
         <div id="kiosk-grid" class="emp-grid"></div>
       </div>
 
-      <!-- CLASSIFICA ORDINE DI ARRIVO LATERALE -->
       <div class="card">
         <h3>🏆 Classifica Ordine di Arrivo</h3>
         <p style="color: #64748b; font-size: 0.85rem; margin-bottom: 10px;">Aggiornata in tempo reale per il turno corrente.</p>
@@ -301,7 +300,7 @@
     </div>
   </div>
 
-  <!-- TAB 3: RUOTA DELLA FORTUNA CON STORICO -->
+  <!-- TAB 3: RUOTA DELLA FORTUNA -->
   <div id="tab-ruota" class="tab-content">
     <div class="grid-2">
       <div>
@@ -312,7 +311,6 @@
           <button onclick="drawWheel()" style="width:100%;">Aggiorna Ruota</button>
         </div>
 
-        <!-- STORICO ESTRAZIONI RUOTA -->
         <div class="card">
           <h3>📜 Storico Estrazioni Odierne</h3>
           <p style="color: #64748b; font-size: 0.85rem; margin-bottom: 10px;">Si azzera automaticamente ogni giorno alle 23:00.</p>
@@ -328,6 +326,37 @@
         </div>
         <button id="spin-btn" onclick="spinWheel()" style="padding: 14px 28px; font-size: 1.1rem; background: var(--present);">GIRA LA RUOTA!</button>
       </div>
+    </div>
+  </div>
+
+  <!-- TAB RIEPILOGO MENSILE -->
+  <div id="tab-riepilogo" class="tab-content">
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div>
+          <h2>📊 Riepilogo Mensile Presenze</h2>
+          <p style="color: #64748b; font-size: 0.85rem; margin-top: 2px;">Conteggio cumulativo dal $1^\circ$ del mese fino al giorno selezionato/corrente.</p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <label style="font-weight: bold; font-size: 0.9rem;">Periodo:</label>
+          <select id="monthly-summary-period" onchange="renderMonthlySummary()" style="padding: 8px 12px;">
+            <option value="current">Mese Corrente</option>
+            <option value="previous">Mese Scorso</option>
+          </select>
+        </div>
+      </div>
+      
+      <table style="margin-top: 20px;">
+        <thead>
+          <tr>
+            <th>Dipendente</th>
+            <th style="color: var(--present);">Presenze Puntuali (gg)</th>
+            <th style="color: var(--late);">Presenze in Ritardo (gg)</th>
+            <th style="color: var(--absent);">Assenze (gg)</th>
+          </tr>
+        </thead>
+        <tbody id="table-monthly-summary"></tbody>
+      </table>
     </div>
   </div>
 
@@ -406,7 +435,7 @@
     </div>
   </div>
 
-  <!-- TAB 6: ORARI E TURNI CON ANTICIPO MAX -->
+  <!-- TAB 6: ORARI E TURNI -->
   <div id="tab-turni" class="tab-content">
     <div class="grid-2">
       <div class="card">
@@ -472,7 +501,6 @@
   </div>
 </div>
 
-<!-- MODALE CONFERMA CLOCK IN -->
 <div id="confirm-clock-modal" class="modal">
   <div class="modal-content" style="max-width: 380px;">
     <h3>Conferma Clock In</h3>
@@ -495,7 +523,6 @@
   </div>
 </div>
 
-<!-- MODALE MODIFICA ORARIO CON PULSANTE ANNULLA TIMBRATURA -->
 <div id="edit-clock-modal" class="modal">
   <div class="modal-content" style="max-width: 400px;">
     <h3>Gestione Timbratura</h3>
@@ -570,31 +597,58 @@
   let isSpinning = false;
   const wheelColors = ['#2563eb', '#16a34a', '#dc2626', '#d97706', '#9333ea', '#0891b2', '#e11d48', '#4d7c0f'];
 
-  // SUONO FEEDBACK (Web Audio API)
-  function playClockInBeep() {
+  // SUONI FEEDBACK DIFFERENZIATI (WEB AUDIO API)
+  function playClockInBeep(isLate) {
     try {
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
+      
+      if (!isLate) {
+        // SUONO IN ORARIO: Bip acuto e positivo (due toni salienti)
+        const osc1 = audioCtx.createOscillator();
+        const osc2 = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
 
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(880, audioCtx.currentTime); // Nota La (A5)
-      osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.15);
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1); // E5
 
-      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
 
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
+        osc1.connect(gain);
+        osc2.connect(gain);
+        gain.connect(audioCtx.destination);
 
-      osc.start();
-      osc.stop(audioCtx.currentTime + 0.15);
+        osc1.start(audioCtx.currentTime);
+        osc1.stop(audioCtx.currentTime + 0.1);
+        osc2.start(audioCtx.currentTime + 0.1);
+        osc2.stop(audioCtx.currentTime + 0.3);
+
+      } else {
+        // SUONO IN RITARDO: Suono basso e drammatico (frequenza discendente tipo errore)
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(220, audioCtx.currentTime); // A3
+        osc.frequency.exponentialRampToValueAtTime(110, audioCtx.currentTime + 0.4); // A2 (Discesa)
+
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start(audioCtx.currentTime);
+        osc.stop(audioCtx.currentTime + 0.4);
+      }
     } catch(e) {
       console.log('Audio non supportato o bloccato');
     }
   }
 
-  // TEMA SCURO (DARK MODE)
+  // TEMA SCURO
   function initDarkMode() {
     if(isDarkMode) {
       document.body.classList.add('dark-mode');
@@ -784,8 +838,8 @@
     const todayStr = now.toISOString().split('T')[0];
 
     if(emp) {
-      createClockInRecord(emp, now, todayStr);
-      playClockInBeep(); // Riproduci suono di feedback
+      const isLate = createClockInRecord(emp, now, todayStr);
+      playClockInBeep(isLate); // Suono appropriato
       closeConfirmClockModal();
       startCooldown();
       renderAll();
@@ -820,6 +874,7 @@
 
     clockLogs.unshift(log);
     localStorage.setItem('hr_logs', JSON.stringify(clockLogs));
+    return isLate;
   }
 
   function closeAlreadyClockedModal() {
@@ -898,7 +953,6 @@
     renderAll();
   }
 
-  // ANNULLA / ELIMINA CLOCK IN (RIPORTA A GRIGIO)
   function cancelClockInRecord() {
     const activeLog = getCurrentShiftLog(targetEmpForEditId);
     if (!activeLog) return;
@@ -1080,7 +1134,7 @@
     document.getElementById('emp-tasks-summary-modal').style.display = 'none';
   }
 
-  // --- SEZIONE MERCE ---
+  // MERCE
   function addGoodsItem(e) {
     e.preventDefault();
     const titleInput = document.getElementById('new-goods-title');
@@ -1153,7 +1207,7 @@
     `).join('') : '<div style="color:#94a3b8; font-size:0.85rem; text-align:center; margin-top:20px;">Nessuna attività registrata.</div>';
   }
 
-  // --- SEZIONE RUOTA ---
+  // RUOTA
   function renderWheelChecklist() {
     const container = document.getElementById('wheel-emp-checklist');
     if(wheelEmployees.length === 0) wheelEmployees = employees.map(e => e.name);
@@ -1278,6 +1332,76 @@
         </div>
       `).join('');
     }
+  }
+
+  // --- SEZIONE RIEPILOGO MENSILE ---
+  function renderMonthlySummary() {
+    const period = document.getElementById('monthly-summary-period').value;
+    const now = new Date();
+    
+    let targetYear = now.getFullYear();
+    let targetMonth = now.getMonth(); // 0-indexed
+
+    if (period === 'previous') {
+      targetMonth -= 1;
+      if (targetMonth < 0) {
+        targetMonth = 11;
+        targetYear -= 1;
+      }
+    }
+
+    // Determina il giorno finale fino a cui calcolare
+    const daysInTargetMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
+    let maxDay = daysInTargetMonth;
+
+    if (period === 'current') {
+      maxDay = now.getDate(); // Fino al giorno corrente
+    }
+
+    // Ordina dipendenti in ordine alfabetico
+    const sortedEmployees = [...employees].sort((a, b) => a.name.localeCompare(b.name, 'it', { sensitivity: 'base' }));
+
+    const container = document.getElementById('table-monthly-summary');
+
+    if (sortedEmployees.length === 0) {
+      container.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#94a3b8;">Nessun dipendente registrato.</td></tr>';
+      return;
+    }
+
+    container.innerHTML = sortedEmployees.map(emp => {
+      let onTimeDays = 0;
+      let lateDays = 0;
+      let absentDays = 0;
+
+      // Scansiona giorno per giorno dal 1° al giorno limite
+      for (let day = 1; day <= maxDay; day++) {
+        const dateStr = `${targetYear}-${String(targetMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        
+        // Cerca tutte le timbrature del dipendente nel giorno
+        const dayLogs = clockLogs.filter(l => l.empId === emp.id && l.date === dateStr);
+
+        if (dayLogs.length === 0) {
+          absentDays++;
+        } else {
+          // SE C'È ALMENO UN RITARDO NEL GIORNO, PREVALE IL RITARDO
+          const hasLate = dayLogs.some(l => l.status === 'late');
+          if (hasLate) {
+            lateDays++;
+          } else {
+            onTimeDays++;
+          }
+        }
+      }
+
+      return `
+        <tr>
+          <td><strong>${emp.name}</strong></td>
+          <td style="color: var(--present); font-weight: bold;">${onTimeDays} gg</td>
+          <td style="color: var(--late); font-weight: bold;">${lateDays} gg</td>
+          <td style="color: var(--absent); font-weight: bold;">${absentDays} gg</td>
+        </tr>
+      `;
+    }).join('');
   }
 
   // Modifica PIN
@@ -1630,6 +1754,7 @@
     renderGoods();
     renderWheelChecklist();
     renderWheelHistory();
+    renderMonthlySummary();
     renderEmployeeTable();
     renderShiftsTable();
     renderCalendar();
