@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NOM HR - Gestionale Personale</title>
+  
+  <!-- METADATI PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#2563eb">
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/912/912318.png">
+
+  <style>
+    :root {
+      --primary: #2563eb;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #1e293b;
+      --border: #e2e8f0;
+      --present: #22c55e;
+      --absent: #94a3b8;
+      --late: #ef4444;
+      --sidebar-width: 280px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
+
+    /* SIDEBAR */
+    sidebar {
+      width: var(--sidebar-width);
+      background: #1e293b;
+      color: white;
+      padding: 30px 15px;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+    }
+
+    sidebar h2 {
+      font-size: 1.3rem;
+      color: #93c5fd;
+      padding: 0 12px 24px 12px;
+      border-bottom: 1px solid #334155;
+      margin-bottom: 20px;
+      letter-spacing: 0.5px;
+    }
+
+    .nav-list { display: flex; flex-direction: column; gap: 8px; }
+    
+    .tab-btn {
+      padding: 14px 20px;
+      border: none;
+      background: none;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #94a3b8;
+      cursor: pointer;
+      text-align: left;
+      width: 100%;
+      border-radius: 8px;
+      transition: all 0.2s ease-in-out;
+    }
+
+    .tab-btn:hover { background: #334155; color: white; }
+    .tab-btn.active { background: var(--primary); color: white; box-shadow: 0 2px 6px rgba(37,99,235,0.3); }
+
+    /* MAIN CONTENT */
+    main { flex: 1; padding: 30px; overflow-y: auto; }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 12px; border-bottom: 2px solid var(--border); }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .card { background: var(--card-bg); padding: 22px; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .grid-kiosk { display: grid; grid-template-columns: 1.8fr 1.2fr; gap: 20px; }
+    @media(max-width: 1100px) { .grid-kiosk { grid-template-columns: 1fr; } }
+    @media(max-width: 960px) { body { flex-direction: column; } sidebar { width: 100%; } .grid-2 { grid-template-columns: 1fr; } }
+
+    input, select, button { padding: 10px 14px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.95rem; }
+    button { background: var(--primary); color: white; border: none; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+    button:hover { opacity: 0.95; }
+    button:disabled { background: #cbd5e1; cursor: not-allowed; }
+
+    /* GRIGLIA KIOSK */
+    .emp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; margin-top: 15px; }
+    .emp-card { padding: 20px; border-radius: 12px; text-align: center; color: white; cursor: pointer; user-select: none; transition: transform 0.1s; display: flex; flex-direction: column; justify-content: space-between; min-height: 130px; }
+    .emp-card:active { transform: scale(0.98); }
+    .emp-card.absent { background-color: var(--absent); }
+    .emp-card.present { background-color: var(--present); }
+    .emp-card.late { background-color: var(--late); }
+    .emp-card .name { font-size: 1.1rem; font-weight: bold; margin-bottom: 6px; }
+    .emp-card .status-time { font-size: 0.85rem; opacity: 0.95; }
+
+    /* COOLDOWN */
+    #cooldown-banner { display: none; background: #fef3c7; color: #92400e; padding: 12px; border-radius: 6px; text-align: center; font-weight: bold; margin-bottom: 16px; }
+
+    /* MODALE */
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 100; }
+    .modal-content { background: white; padding: 24px; border-radius: 8px; text-align: center; max-width: 420px; width: 90%; }
+
+    /* CALENDARIO */
+    .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center; }
+    .cal-day-header { font-weight: bold; padding: 8px 0; background: #f1f5f9; border-radius: 4px; }
+    .cal-day { padding: 14px 4px; background: #ffffff; border: 1px solid var(--border); border-radius: 4px; cursor: pointer; min-height: 50px; }
+    .cal-day.active-day { border-color: var(--primary); font-weight: bold; background: #eff6ff; }
+    .cal-day.has-logs { font-weight: bold; }
+    .cal-day.empty { background: transparent; border: none; cursor: default; }
+
+    /* MANSIONI */
+    .task-card { padding: 16px; border-radius: 8px; color: white; cursor: pointer; transition: transform 0.1s; display: flex; flex-direction: column; justify-content: space-between; min-height: 120px; position: relative; }
+    .task-card.pending { background-color: var(--absent); }
+    .task-card.done { background-color: var(--present); }
+    .task-card .title { font-weight: bold; font-size: 1.1rem; padding-right: 25px; }
+    .task-card .assignees { font-size: 0.85rem; opacity: 0.95; margin-top: 8px; }
+    .task-delete-btn { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.2); border: none; color: white; border-radius: 4px; width: 24px; height: 24px; font-weight: bold; cursor: pointer; line-height: 20px; }
+    .task-delete-btn:hover { background: rgba(220, 38, 38, 0.8); }
+
+    .chat-box { background: #f8fafc; border: 1px solid var(--border); border-radius: 6px; padding: 12px; height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+    .chat-msg { background: white; border: 1px solid var(--border); padding: 8px 12px; border-radius: 6px; font-size: 0.88rem; }
+    .chat-msg .time { font-weight: bold; color: var(--primary); margin-right: 6px; }
+
+    .assigned-emp-badge { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; padding: 10px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s; }
+    .assigned-emp-badge:hover { background: #dbeafe; }
+
+    /* RUOTA */
+    .wheel-container { display: flex; flex-direction: column; align-items: center; position: relative; }
+    #wheel-canvas { border-radius: 50%; box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+    .wheel-pointer { width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 25px solid #ef4444; position: absolute; top: -10px; z-index: 10; }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { text-align: left; padding: 10px; border-bottom: 1px solid var(--border); }
+    th { background: #f1f5f9; }
+  </style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<sidebar>
+  <h2>NOM HR</h2>
+  <div class="nav-list">
+    <button class="tab-btn active" onclick="switchTab('kiosk')">Kiosk Clock In</button>
+    <button class="tab-btn" onclick="switchTab('mansioni')">Mansioni</button>
+    <button class="tab-btn" onclick="switchTab('ruota')">Ruota</button>
+    <button class="tab-btn" onclick="requestAdminAccess('dipendenti')">Anagrafica Dipendenti 🔒</button>
+    <button class="tab-btn" onclick="requestAdminAccess('presenze')">Registro Calendario 🔒</button>
+    <button class="tab-btn" onclick="requestAdminAccess('turni')">Orari e Turni 🔒</button>
+    <button class="tab-btn" onclick="requestAdminAccess('settings')">Impostazioni PIN 🔒</button>
+  </div>
+</sidebar>
+
+<!-- MAIN -->
+<main>
+  <header>
+    <h1 id="page-title">Kiosk Clock In</h1>
+    <span id="current-clock" style="font-weight: bold; font-size: 1.1rem;"></span>
+  </header>
+
+  <!-- BANNER COOLDOWN 5 SECONDI -->
+  <div id="cooldown-banner">
+    Prossima timbratura disponibile tra <span id="cooldown-timer">5</span> secondi...
+  </div>
+
+  <!-- TAB 1: KIOSK CLOCK IN (CON CLASSIFICA LATERALE) -->
+  <div id="tab-kiosk" class="tab-content active">
+    <div class="grid-kiosk">
+      <div class="card">
+        <h2>Seleziona il tuo nome per effettuare il Clock In</h2>
+        <p style="color: #64748b; font-size: 0.9rem; margin-top: 4px;">Tocca il tuo riquadro per timbrare l'ingresso. Turno 1 (Uscita 15:00) | Turno 2 (Uscita 23:00).</p>
+        <div id="kiosk-grid" class="emp-grid"></div>
+      </div>
+
+      <!-- CLASSIFICA ORDINE DI ARRIVO LATERALE -->
+      <div class="card">
+        <h3>🏆 Classifica Ordine di Arrivo</h3>
+        <p style="color: #64748b; font-size: 0.85rem; margin-bottom: 10px;">Aggiornata in tempo reale per il turno corrente.</p>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 50px;">#</th>
+              <th>Dipendente</th>
+              <th>Ora</th>
+              <th>Stato</th>
+            </tr>
+          </thead>
+          <tbody id="table-leaderboard"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: MANSIONI (UNLOCKED) -->
+  <div id="tab-mansioni" class="tab-content">
+    <div class="grid-2">
+      <div>
+        <div class="card">
+          <h3>Aggiungi Nuova Mansione</h3>
+          <form onsubmit="addCustomTask(event)" style="display:flex; gap:10px; margin-top:10px;">
+            <input type="text" id="new-task-title" placeholder="Es. Pulizia piano di lavoro" style="flex:1;" required>
+            <button type="submit">Aggiungi</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <h3>Checklist Mansioni</h3>
+          <p style="color: #64748b; font-size: 0.85rem; margin-bottom: 10px;">Clicca per assegnare. Clicca sulla 'X' per eliminare.</p>
+          <div id="tasks-grid" class="emp-grid"></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <h3>Registro Attività / Mini-Chat</h3>
+          <p style="color: #64748b; font-size: 0.85rem; margin-bottom: 10px;">Si azzera automaticamente ogni giorno alle 23:00.</p>
+          <div id="task-chat" class="chat-box"></div>
+        </div>
+
+        <div class="card">
+          <h3>Riepilogo Dipendenti Operativi</h3>
+          <p style="color: #64748b; font-size: 0.85rem; margin-bottom: 10px;">Clicca sul dipendente per vedere quali mansioni ha svolto e gli orari.</p>
+          <div id="assigned-employees-list" style="display:flex; flex-direction:column; gap:8px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: RUOTA DELLA FORTUNA -->
+  <div id="tab-ruota" class="tab-content">
+    <div class="grid-2">
+      <div class="card">
+        <h3>Seleziona Dipendenti per la Ruota</h3>
+        <p style="color: #64748b; font-size: 0.85rem; margin-bottom: 12px;">Spunta chi desideri inserire nell'estrazione casuale.</p>
+        <div id="wheel-emp-checklist" style="display:flex; flex-direction:column; gap:8px; max-height:300px; overflow-y:auto; margin-bottom:15px;"></div>
+        <button onclick="drawWheel()" style="width:100%;">Aggiorna Ruota</button>
+      </div>
+
+      <div class="card" style="text-align: center;">
+        <h3>Estrazione Casuale</h3>
+        <div class="wheel-container" style="margin: 20px 0;">
+          <div class="wheel-pointer"></div>
+          <canvas id="wheel-canvas" width="320" height="320"></canvas>
+        </div>
+        <button id="spin-btn" onclick="spinWheel()" style="padding: 14px 28px; font-size: 1.1rem; background: var(--present);">GIRA LA RUOTA!</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 4: ANAGRAFICA DIPENDENTI -->
+  <div id="tab-dipendenti" class="tab-content">
+    <div class="grid-2">
+      <div class="card">
+        <h3>Aggiungi Dipendente</h3>
+        <form onsubmit="saveEmployee(event)" style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+          <input type="text" id="emp-name" placeholder="Nome e Cognome *" required>
+          <input type="text" id="emp-role" placeholder="Ruolo (Opzionale)">
+          <input type="email" id="emp-email" placeholder="Email (Opzionale)">
+          <button type="submit">Salva Dipendente</button>
+        </form>
+      </div>
+      <div class="card">
+        <h3>Elenco Dipendenti</h3>
+        <table>
+          <thead>
+            <tr><th>Nome</th><th>Ruolo</th><th>Azione</th></tr>
+          </thead>
+          <tbody id="table-employees"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 5: REGISTRO CALENDARIO CON ESPORTAZIONE -->
+  <div id="tab-presenze" class="tab-content">
+    <div class="card">
+      <h3>Esporta Registro Presenze</h3>
+      <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end; margin-top: 10px;">
+        <label style="display:flex; flex-direction:column; font-size:0.85rem;">
+          Da Data:
+          <input type="date" id="export-start-date">
+        </label>
+        <label style="display:flex; flex-direction:column; font-size:0.85rem;">
+          A Data:
+          <input type="date" id="export-end-date">
+        </label>
+        <label style="display:flex; flex-direction:column; font-size:0.85rem;">
+          Formato File:
+          <select id="export-format">
+            <option value="csv">CSV (Excel/Calc)</option>
+            <option value="excel">Excel (.xls)</option>
+          </select>
+        </label>
+        <button onclick="exportPresenzeData()" style="background: var(--present); padding: 10px 20px;">📥 Scarica Report</button>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="calendar-header">
+          <button onclick="changeMonth(-1)">&lt;</button>
+          <h3 id="cal-month-year"></h3>
+          <button onclick="changeMonth(1)">&gt;</button>
+        </div>
+        <div class="calendar-grid">
+          <div class="cal-day-header">Lun</div><div class="cal-day-header">Mar</div><div class="cal-day-header">Mer</div>
+          <div class="cal-day-header">Gio</div><div class="cal-day-header">Ven</div><div class="cal-day-header">Sab</div>
+          <div class="cal-day-header">Dom</div>
+        </div>
+        <div id="calendar-days" class="calendar-grid" style="margin-top: 6px;"></div>
+      </div>
+
+      <div class="card">
+        <h3 id="selected-date-title">Presenze del giorno</h3>
+        <table>
+          <thead>
+            <tr><th>Ingresso</th><th>Uscita Fissa</th><th>Dipendente</th><th>Stato</th></tr>
+          </thead>
+          <tbody id="table-daily-logs"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 6: ORARI E TURNI CON ANTICIPO MAX -->
+  <div id="tab-turni" class="tab-content">
+    <div class="grid-2">
+      <div class="card">
+        <h3>Aggiungi Nuovo Turno</h3>
+        <form onsubmit="addShift(event)" style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+          <input type="text" id="shift-name" placeholder="Nome Turno (es. Mattina)" required>
+          <label>Inizio Turno: <input type="time" id="shift-start-time" required></label>
+          <label>Tolleranza Ritardo (Minuti): <input type="number" id="shift-tolerance-min" value="10" min="0" required></label>
+          <label>Anticipo Max Consentito (Minuti): <input type="number" id="shift-early-min" value="10" min="0" required></label>
+          <button type="submit">Aggiungi Turno</button>
+        </form>
+      </div>
+      <div class="card">
+        <h3>Turni Configurati</h3>
+        <table>
+          <thead>
+            <tr><th>Nome</th><th>Inizio</th><th>Tolleranza</th><th>Anticipo Max</th><th>Azione</th></tr>
+          </thead>
+          <tbody id="table-shifts"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 7: IMPOSTAZIONI PIN -->
+  <div id="tab-settings" class="tab-content">
+    <div class="card" style="max-width: 400px;">
+      <h3>Modifica PIN Amministratore</h3>
+      <form onsubmit="changePin(event)" style="display: flex; flex-direction: column; gap: 12px; margin-top: 12px;">
+        <input type="password" id="old-pin" placeholder="PIN Attuale" required>
+        <input type="password" id="new-pin" placeholder="Nuovo PIN" required>
+        <button type="submit">Aggiorna PIN</button>
+      </form>
+    </div>
+  </div>
+</main>
+
+<!-- MODALI -->
+<div id="pin-modal" class="modal">
+  <div class="modal-content">
+    <h3>Accesso Riservato</h3>
+    <p style="margin: 10px 0; font-size: 0.9rem; color: #64748b;">Inserisci il PIN per accedere</p>
+    <input type="password" id="pin-input" style="width: 100%; text-align: center; font-size: 1.2rem;" placeholder="****">
+    <div style="display: flex; gap: 10px; margin-top: 16px;">
+      <button onclick="closePinModal()" style="flex:1; background: #94a3b8;">Annulla</button>
+      <button onclick="verifyPin()" style="flex:1;">Conferma</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODALE CONFERMA CLOCK IN -->
+<div id="confirm-clock-modal" class="modal">
+  <div class="modal-content" style="max-width: 380px;">
+    <h3>Conferma Clock In</h3>
+    <p id="confirm-clock-msg" style="margin: 14px 0; font-size: 1rem; color: #1e293b;"></p>
+    <div style="display: flex; gap: 10px; margin-top: 16px;">
+      <button onclick="closeConfirmClockModal()" style="flex:1; background: #94a3b8;">Annulla</button>
+      <button onclick="executeConfirmedClockIn()" style="flex:1; background: var(--present);">Conferma</button>
+    </div>
+  </div>
+</div>
+
+<div id="already-clocked-modal" class="modal">
+  <div class="modal-content">
+    <h3>Clock In già effettuato</h3>
+    <p id="already-clocked-msg" style="margin: 12px 0; font-size: 0.95rem; color: #64748b;"></p>
+    <div style="display: flex; gap: 10px; margin-top: 16px;">
+      <button onclick="closeAlreadyClockedModal()" style="flex:1; background: #94a3b8;">OK</button>
+      <button onclick="requestEditClockIn()" style="flex:1;">Modifica Orario 🔒</button>
+    </div>
+  </div>
+</div>
+
+<div id="edit-clock-modal" class="modal">
+  <div class="modal-content" style="max-width: 380px;">
+    <h3>Modifica Orario Clock In</h3>
+    <p id="edit-clock-emp-name" style="margin: 8px 0; font-weight: bold; color: var(--primary);"></p>
+    <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 12px;">Seleziona il nuovo orario di ingresso:</p>
+    
+    <div style="display: flex; justify-content: center; margin-bottom: 20px;">
+      <input type="time" id="edit-clock-time-input" style="font-size: 1.4rem; padding: 10px; text-align: center; width: 180px;" required>
+    </div>
+
+    <div style="display: flex; gap: 10px;">
+      <button onclick="closeEditClockModal()" style="flex:1; background: #94a3b8;">Annulla</button>
+      <button onclick="saveClockInEdit()" style="flex:1; background: var(--present);">Salva Modifica</button>
+    </div>
+  </div>
+</div>
+
+<div id="task-modal" class="modal">
+  <div class="modal-content" style="max-width: 480px;">
+    <h3 id="modal-task-title">Assegna Mansione</h3>
+    <p style="margin: 8px 0; font-size: 0.85rem; color: #64748b;">Seleziona chi ha svolto questa mansione:</p>
+    <div id="modal-emp-checklist" style="text-align: left; max-height: 200px; overflow-y: auto; margin: 12px 0; display:flex; flex-direction:column; gap:8px;"></div>
+    <div style="display: flex; gap: 10px; margin-top: 16px;">
+      <button onclick="closeTaskModal()" style="flex:1; background: #94a3b8;">Annulla</button>
+      <button onclick="resetTaskState()" style="background: #ef4444;">Non Svolta</button>
+      <button onclick="saveTaskAssignment()" style="flex:1; background: var(--present);">Conferma</button>
+    </div>
+  </div>
+</div>
+
+<div id="emp-tasks-summary-modal" class="modal">
+  <div class="modal-content">
+    <h3 id="summary-emp-name">Riepilogo Dipendente</h3>
+    <div id="summary-tasks-list" style="text-align: left; margin: 15px 0; max-height: 250px; overflow-y: auto;"></div>
+    <button onclick="closeEmpTasksSummaryModal()" style="width: 100%;">Chiudi</button>
+  </div>
+</div>
+
+<script>
+  // State Initialization
+  let adminPin = localStorage.getItem('hr_pin') || '0104';
+  let employees = JSON.parse(localStorage.getItem('hr_employees')) || [];
+  let clockLogs = JSON.parse(localStorage.getItem('hr_logs')) || [];
+  let shifts = JSON.parse(localStorage.getItem('hr_shifts')) || [{ id: 1, name: 'Standard', start: '08:00', tolerance: 10, early: 10 }];
+  let tasks = JSON.parse(localStorage.getItem('hr_tasks_v2')) || [
+    { id: 1, title: 'Apertura Locale', assignees: [], done: false },
+    { id: 2, title: 'Controllo Magazzino', assignees: [], done: false }
+  ];
+  let taskLogs = JSON.parse(localStorage.getItem('hr_task_logs')) || [];
+  let lastChatResetDate = localStorage.getItem('hr_chat_reset_date') || '';
+  let wheelEmployees = JSON.parse(localStorage.getItem('hr_wheel_emps')) || [];
+
+  let pendingTab = null;
+  let isCooldown = false;
+  let cooldownTimer = null;
+  let currentCalDate = new Date();
+  let selectedDateStr = new Date().toISOString().split('T')[0];
+  let activeTaskId = null;
+  let targetEmpForEditId = null;
+  let targetEmpForClockInId = null;
+
+  // Ruota state
+  let wheelAngle = 0;
+  let isSpinning = false;
+  const wheelColors = ['#2563eb', '#16a34a', '#dc2626', '#d97706', '#9333ea', '#0891b2', '#e11d48', '#4d7c0f'];
+
+  // Clock
+  setInterval(() => {
+    const now = new Date();
+    document.getElementById('current-clock').textContent = now.toLocaleDateString('it-IT') + ' ' + now.toLocaleTimeString('it-IT');
+    checkChatAutoReset(now);
+  }, 1000);
+
+  function checkChatAutoReset(now) {
+    const todayStr = now.toISOString().split('T')[0];
+    if (now.getHours() >= 23 && lastChatResetDate !== todayStr) {
+      taskLogs = [];
+      localStorage.setItem('hr_task_logs', JSON.stringify([]));
+      lastChatResetDate = todayStr;
+      localStorage.setItem('hr_chat_reset_date', todayStr);
+      renderTasks();
+    }
+  }
+
+  // Navigation
+  function switchTab(tabId) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+    const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick')?.includes(`'${tabId}'`));
+    if(btn) {
+      btn.classList.add('active');
+      document.getElementById('page-title').textContent = btn.textContent.replace('🔒', '').trim();
+    }
+    document.getElementById(`tab-${tabId}`).classList.add('active');
+
+    renderAll();
+  }
+
+  function requestAdminAccess(tabId) {
+    pendingTab = tabId;
+    document.getElementById('pin-input').value = '';
+    document.getElementById('pin-modal').style.display = 'flex';
+  }
+
+  function closePinModal() {
+    document.getElementById('pin-modal').style.display = 'none';
+    pendingTab = null;
+  }
+
+  function defaultVerifyPin() {
+    const input = document.getElementById('pin-input').value;
+    if(input === adminPin) {
+      const target = pendingTab;
+      closePinModal();
+      switchTab(target);
+    } else {
+      alert('PIN Errato!');
+    }
+  }
+
+  let verifyPin = defaultVerifyPin;
+
+  // Employee CRUD
+  function saveEmployee(e) {
+    e.preventDefault();
+    const name = document.getElementById('emp-name').value;
+    const role = document.getElementById('emp-role').value || '-';
+    const email = document.getElementById('emp-email').value || '-';
+
+    employees.push({ id: Date.now(), name, role, email });
+    localStorage.setItem('hr_employees', JSON.stringify(employees));
+    e.target.reset();
+    renderAll();
+  }
+
+  function deleteEmployee(id) {
+    if(!confirm('Eliminare il dipendente?')) return;
+    employees = employees.filter(e => e.id !== id);
+    localStorage.setItem('hr_employees', JSON.stringify(employees));
+    renderAll();
+  }
+
+  // Helper Log Attivi Turno
+  function getCurrentShiftLog(empId) {
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+    const currentHour = now.getHours();
+
+    const todayLogs = clockLogs.filter(l => l.empId === empId && l.date === todayStr);
+    if(todayLogs.length === 0) return null;
+
+    if(currentHour >= 15 && currentHour < 23) {
+      return todayLogs.find(l => {
+        const timeStr = l.inTime || l.time || '00:00';
+        const h = parseInt(timeStr.split(':')[0]);
+        return h >= 15;
+      }) || null;
+    }
+    
+    if(currentHour < 15) {
+      return todayLogs.find(l => {
+        const timeStr = l.inTime || l.time || '00:00';
+        const h = parseInt(timeStr.split(':')[0]);
+        return h < 15;
+      }) || null;
+    }
+
+    return null;
+  }
+
+  // Richiesta di Clock In con Finestra di Conferma
+  function performClockIn(empId) {
+    if(isCooldown) return;
+
+    const emp = employees.find(e => e.id === empId);
+    if(!emp) return;
+
+    const activeLog = getCurrentShiftLog(empId);
+
+    if(activeLog) {
+      targetEmpForEditId = empId;
+      const displayTime = activeLog.inTime || activeLog.time || '--:--';
+      document.getElementById('already-clocked-msg').textContent = `${emp.name} ha già effettuato il Clock In per questo turno alle ore ${displayTime}.`;
+      document.getElementById('already-clocked-modal').style.display = 'flex';
+      return;
+    }
+
+    const now = new Date();
+    if(shifts.length > 0) {
+      const currentMin = now.getHours() * 60 + now.getMinutes();
+      
+      const isTooEarly = shifts.every(s => {
+        const [h, m] = s.start.split(':').map(Number);
+        const shiftStartMin = h * 60 + m;
+        const maxEarlyMin = parseInt(s.early || 10);
+        const earliestAllowedMin = shiftStartMin - maxEarlyMin;
+
+        return currentMin < earliestAllowedMin;
+      });
+
+      if(isTooEarly) {
+        const firstShift = shifts[0];
+        alert(`Clock In non consentito. È possibile timbrare al massimo ${firstShift.early || 10} minuti prima del turno.`);
+        return;
+      }
+    }
+
+    targetEmpForClockInId = empId;
+    const timeStr = now.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+    document.getElementById('confirm-clock-msg').innerHTML = `Confermi il Clock In per <strong>${emp.name}</strong> alle ore <strong>${timeStr}</strong>?`;
+    document.getElementById('confirm-clock-modal').style.display = 'flex';
+  }
+
+  function closeConfirmClockModal() {
+    document.getElementById('confirm-clock-modal').style.display = 'none';
+    targetEmpForClockInId = null;
+  }
+
+  function executeConfirmedClockIn() {
+    if(!targetEmpForClockInId) return;
+
+    const emp = employees.find(e => e.id === targetEmpForClockInId);
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+
+    if(emp) {
+      createClockInRecord(emp, now, todayStr);
+      closeConfirmClockModal();
+      startCooldown();
+      renderAll();
+    }
+  }
+
+  function createClockInRecord(emp, dateObj, todayStr) {
+    let autoOutTimeStr = "15:00";
+    if (dateObj.getHours() >= 15) {
+      autoOutTimeStr = "23:00";
+    }
+
+    let isLate = false;
+    if(shifts.length > 0) {
+      const currentMin = dateObj.getHours() * 60 + dateObj.getMinutes();
+      isLate = shifts.every(s => {
+        const [h, m] = s.start.split(':').map(Number);
+        const shiftStartMin = h * 60 + m + parseInt(s.tolerance);
+        return currentMin > shiftStartMin;
+      });
+    }
+
+    const log = {
+      id: Date.now(),
+      empId: emp.id,
+      empName: emp.name,
+      date: todayStr,
+      inTime: dateObj.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
+      outTime: autoOutTimeStr,
+      status: isLate ? 'late' : 'present'
+    };
+
+    clockLogs.unshift(log);
+    localStorage.setItem('hr_logs', JSON.stringify(clockLogs));
+  }
+
+  function closeAlreadyClockedModal() {
+    document.getElementById('already-clocked-modal').style.display = 'none';
+  }
+
+  function requestEditClockIn() {
+    closeAlreadyClockedModal();
+    document.getElementById('pin-input').value = '';
+    
+    verifyPin = function() {
+      const input = document.getElementById('pin-input').value;
+      if(input === adminPin) {
+        closePinModal();
+        openEditClockModal();
+      } else {
+        alert('PIN Errato!');
+      }
+      verifyPin = defaultVerifyPin;
+    };
+
+    document.getElementById('pin-modal').style.display = 'flex';
+  }
+
+  function openEditClockModal() {
+    const emp = employees.find(e => e.id === targetEmpForEditId);
+    const activeLog = getCurrentShiftLog(targetEmpForEditId);
+
+    document.getElementById('edit-clock-emp-name').textContent = `Dipendente: ${emp.name}`;
+    const currentInTime = activeLog ? (activeLog.inTime || activeLog.time || "08:00") : "08:00";
+    document.getElementById('edit-clock-time-input').value = currentInTime;
+    document.getElementById('edit-clock-modal').style.display = 'flex';
+  }
+
+  function closeEditClockModal() {
+    document.getElementById('edit-clock-modal').style.display = 'none';
+    targetEmpForEditId = null;
+  }
+
+  function saveClockInEdit() {
+    const newTimeVal = document.getElementById('edit-clock-time-input').value;
+    if(!newTimeVal) return alert('Inserisci un orario valido!');
+
+    const activeLog = getCurrentShiftLog(targetEmpForEditId);
+
+    if(activeLog) {
+      const logIndex = clockLogs.findIndex(l => l.id === activeLog.id);
+      if(logIndex !== -1) {
+        const [h, m] = newTimeVal.split(':').map(Number);
+        
+        let autoOutTimeStr = "15:00";
+        if (h >= 15) {
+          autoOutTimeStr = "23:00";
+        }
+
+        let isLate = false;
+        if(shifts.length > 0) {
+          const currentMin = h * 60 + m;
+          isLate = shifts.every(s => {
+            const [sh, sm] = s.start.split(':').map(Number);
+            const shiftStartMin = sh * 60 + sm + parseInt(s.tolerance);
+            return currentMin > shiftStartMin;
+          });
+        }
+
+        clockLogs[logIndex].inTime = newTimeVal;
+        clockLogs[logIndex].outTime = autoOutTimeStr;
+        clockLogs[logIndex].status = isLate ? 'late' : 'present';
+
+        localStorage.setItem('hr_logs', JSON.stringify(clockLogs));
+        alert(`Orario aggiornato a ${newTimeVal}. Uscita fissa prevista per le ${autoOutTimeStr}.`);
+      }
+    }
+
+    closeEditClockModal();
+    renderAll();
+  }
+
+  function startCooldown() {
+    isCooldown = true;
+    let count = 5;
+    const banner = document.getElementById('cooldown-banner');
+    const timerElem = document.getElementById('cooldown-timer');
+    
+    banner.style.display = 'block';
+    timerElem.textContent = count;
+
+    cooldownTimer = setInterval(() => {
+      count--;
+      timerElem.textContent = count;
+      if(count <= 0) {
+        clearInterval(cooldownTimer);
+        isCooldown = false;
+        banner.style.display = 'none';
+        renderKioskGrid();
+      }
+    }, 1000);
+
+    renderKioskGrid();
+  }
+
+  // Turni
+  function addShift(e) {
+    e.preventDefault();
+    const name = document.getElementById('shift-name').value;
+    const start = document.getElementById('shift-start-time').value;
+    const tolerance = document.getElementById('shift-tolerance-min').value;
+    const early = document.getElementById('shift-early-min').value;
+
+    shifts.push({ id: Date.now(), name, start, tolerance, early });
+    localStorage.setItem('hr_shifts', JSON.stringify(shifts));
+    e.target.reset();
+    renderAll();
+  }
+
+  function deleteShift(id) {
+    shifts = shifts.filter(s => s.id !== id);
+    localStorage.setItem('hr_shifts', JSON.stringify(shifts));
+    renderAll();
+  }
+
+  // Mansioni
+  function addCustomTask(e) {
+    e.preventDefault();
+    const titleInput = document.getElementById('new-task-title');
+    const newTitle = titleInput.value.trim();
+
+    const newTask = { id: Date.now(), title: newTitle, assignees: [], done: false };
+    tasks.push(newTask);
+    localStorage.setItem('hr_tasks_v2', JSON.stringify(tasks));
+
+    const now = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+    taskLogs.unshift({ time: now, msg: `Nuova mansione creata: "${newTitle}"` });
+    localStorage.setItem('hr_task_logs', JSON.stringify(taskLogs));
+
+    titleInput.value = '';
+    renderAll();
+  }
+
+  function deleteTask(taskId, event) {
+    event.stopPropagation();
+    const task = tasks.find(t => t.id === taskId);
+    if(!task) return;
+
+    if(!confirm(`Eliminare la mansione "${task.title}"?`)) return;
+
+    tasks = tasks.filter(t => t.id !== taskId);
+    localStorage.setItem('hr_tasks_v2', JSON.stringify(tasks));
+
+    const now = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+    taskLogs.unshift({ time: now, msg: `Mansione eliminata: "${task.title}"` });
+    localStorage.setItem('hr_task_logs', JSON.stringify(taskLogs));
+
+    renderAll();
+  }
+
+  function openTaskModal(taskId) {
+    activeTaskId = taskId;
+    const task = tasks.find(t => t.id === taskId);
+    if(!task) return;
+
+    document.getElementById('modal-task-title').textContent = task.title;
+    const container = document.getElementById('modal-emp-checklist');
+
+    container.innerHTML = employees.map(e => `
+      <label style="display:flex; align-items:center; gap:8px; background:#f1f5f9; padding:8px; border-radius:4px; cursor:pointer;">
+        <input type="checkbox" value="${e.name}" ${task.assignees.includes(e.name) ? 'checked' : ''}>
+        <span>${e.name} (${e.role})</span>
+      </label>
+    `).join('');
+
+    document.getElementById('task-modal').style.display = 'flex';
+  }
+
+  function closeTaskModal() {
+    document.getElementById('task-modal').style.display = 'none';
+    activeTaskId = null;
+  }
+
+  function saveTaskAssignment() {
+    const task = tasks.find(t => t.id === activeTaskId);
+    if(!task) return;
+
+    const selected = Array.from(document.querySelectorAll('#modal-emp-checklist input:checked')).map(i => i.value);
+    
+    if(selected.length === 0) {
+      alert('Seleziona almeno un dipendente o clicca su "Non Svolta".');
+      return;
+    }
+
+    task.assignees = selected;
+    task.done = true;
+    localStorage.setItem('hr_tasks_v2', JSON.stringify(tasks));
+
+    const now = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+    taskLogs.unshift({ time: now, msg: `Mansione "${task.title}" completata da: ${selected.join(', ')}` });
+    localStorage.setItem('hr_task_logs', JSON.stringify(taskLogs));
+
+    closeTaskModal();
+    renderAll();
+  }
+
+  function resetTaskState() {
+    const task = tasks.find(t => t.id === activeTaskId);
+    if(!task) return;
+
+    task.assignees = [];
+    task.done = false;
+    localStorage.setItem('hr_tasks_v2', JSON.stringify(tasks));
+
+    const now = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+    taskLogs.unshift({ time: now, msg: `Mansione "${task.title}" segnata come NON svolta.` });
+    localStorage.setItem('hr_task_logs', JSON.stringify(taskLogs));
+
+    closeTaskModal();
+    renderAll();
+  }
+
+  function openEmpTasksSummaryModal(empName) {
+    document.getElementById('summary-emp-name').textContent = `Mansioni di ${empName}`;
+    const container = document.getElementById('summary-tasks-list');
+    
+    const userDoneTasks = tasks.filter(t => t.done && t.assignees.includes(empName));
+    
+    if(userDoneTasks.length === 0) {
+      container.innerHTML = '<p style="color:#94a3b8; font-size:0.9rem;">Nessuna mansione completata al momento.</p>';
+    } else {
+      container.innerHTML = userDoneTasks.map(t => {
+        const log = taskLogs.find(l => l.msg.includes(`"${t.title}"`) && l.msg.includes(empName));
+        const timeStr = log ? log.time : 'In giornata';
+        return `
+          <div style="padding:10px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; margin-bottom:8px;">
+            <div style="font-weight:bold; color:#1e293b;">${t.title}</div>
+            <div style="font-size:0.8rem; color:#64748b; margin-top:2px;">Completata alle ore: ${timeStr}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    document.getElementById('emp-tasks-summary-modal').style.display = 'flex';
+  }
+
+  function closeEmpTasksSummaryModal() {
+    document.getElementById('emp-tasks-summary-modal').style.display = 'none';
+  }
+
+  // Ruota
+  function renderWheelChecklist() {
+    const container = document.getElementById('wheel-emp-checklist');
+    if(wheelEmployees.length === 0) wheelEmployees = employees.map(e => e.name);
+
+    container.innerHTML = employees.map(e => `
+      <label style="display:flex; align-items:center; gap:8px; background:#f1f5f9; padding:8px; border-radius:4px; cursor:pointer;">
+        <input type="checkbox" value="${e.name}" ${wheelEmployees.includes(e.name) ? 'checked' : ''} onchange="updateWheelEmpsSelection()">
+        <span>${e.name}</span>
+      </label>
+    `).join('');
+    drawWheel();
+  }
+
+  function updateWheelEmpsSelection() {
+    const checked = Array.from(document.querySelectorAll('#wheel-emp-checklist input:checked')).map(i => i.value);
+    wheelEmployees = checked;
+    localStorage.setItem('hr_wheel_emps', JSON.stringify(wheelEmployees));
+    drawWheel();
+  }
+
+  function drawWheel() {
+    const canvas = document.getElementById('wheel-canvas');
+    if(!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+    const radius = width / 2;
+
+    ctx.clearRect(0, 0, width, height);
+
+    if(wheelEmployees.length === 0) {
+      ctx.fillStyle = '#94a3b8';
+      ctx.beginPath();
+      ctx.arc(radius, radius, radius, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.fillStyle = 'white';
+      ctx.font = '16px Segoe UI';
+      ctx.textAlign = 'center';
+      ctx.fillText('Nessun Dipendente', radius, radius);
+      return;
+    }
+
+    const arcSize = (2 * Math.PI) / wheelEmployees.length;
+
+    for (let i = 0; i < wheelEmployees.length; i++) {
+      const angle = wheelAngle + i * arcSize;
+      ctx.fillStyle = wheelColors[i % wheelColors.length];
+      ctx.beginPath();
+      ctx.moveTo(radius, radius);
+      ctx.arc(radius, radius, radius, angle, angle + arcSize);
+      ctx.lineTo(radius, radius);
+      ctx.fill();
+
+      ctx.save();
+      ctx.translate(radius, radius);
+      ctx.rotate(angle + arcSize / 2);
+      ctx.textAlign = 'right';
+      ctx.fillStyle = 'white';
+      ctx.font = 'bold 14px Segoe UI';
+      ctx.fillText(wheelEmployees[i], radius - 15, 5);
+      ctx.restore();
+    }
+  }
+
+  function spinWheel() {
+    if(isSpinning || wheelEmployees.length === 0) return;
+    isSpinning = true;
+    document.getElementById('spin-btn').disabled = true;
+
+    const spinAngle = Math.floor(Math.random() * 360) + 1440;
+    const duration = 4000;
+    const start = performance.now();
+    const startAngle = wheelAngle;
+
+    function animate(now) {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / duration, 1);
+      const easeOut = 1 - Math.pow(1 - progress, 3);
+      
+      wheelAngle = startAngle + (spinAngle * Math.PI / 180) * easeOut;
+      drawWheel();
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        isSpinning = false;
+        document.getElementById('spin-btn').disabled = false;
+        calculateWheelWinner();
+      }
+    }
+
+    requestAnimationFrame(animate);
+  }
+
+  function calculateWheelWinner() {
+    const arcSize = (2 * Math.PI) / wheelEmployees.length;
+    let normalizedAngle = (1.5 * Math.PI - (wheelAngle % (2 * Math.PI))) % (2 * Math.PI);
+    if (normalizedAngle < 0) normalizedAngle += 2 * Math.PI;
+
+    const winnerIndex = Math.floor(normalizedAngle / arcSize);
+    const winner = wheelEmployees[winnerIndex];
+
+    setTimeout(() => {
+      alert(`🎉 ESTRATTO CASUALMENTE: ${winner}!`);
+    }, 100);
+  }
+
+  // Modifica PIN
+  function changePin(e) {
+    e.preventDefault();
+    const oldPin = document.getElementById('old-pin').value;
+    const newPin = document.getElementById('new-pin').value;
+
+    if(oldPin !== adminPin) {
+      alert('Il PIN attuale non è corretto.');
+      return;
+    }
+
+    adminPin = newPin;
+    localStorage.setItem('hr_pin', adminPin);
+    alert('PIN aggiornato con successo!');
+    e.target.reset();
+  }
+
+  // Esportazione
+  function exportPresenzeData() {
+    const startDate = document.getElementById('export-start-date').value;
+    const endDate = document.getElementById('export-end-date').value;
+    const format = document.getElementById('export-format').value;
+
+    let filtered = clockLogs;
+
+    if(startDate) {
+      filtered = filtered.filter(l => l.date >= startDate);
+    }
+    if(endDate) {
+      filtered = filtered.filter(l => l.date <= endDate);
+    }
+
+    if(filtered.length === 0) {
+      alert('Nessun dato di presenza trovato per l\'intervallo selezionato.');
+      return;
+    }
+
+    if(format === 'csv') {
+      let csvContent = "data:text/csv;charset=utf-8,Data,Dipendente,Orario Ingresso,Orario Uscita,Stato\n";
+      filtered.forEach(l => {
+        const row = [
+          l.date,
+          `"${l.empName}"`,
+          l.inTime || l.time || '',
+          l.outTime || '',
+          l.status === 'present' ? 'In Orario' : 'In Ritardo'
+        ].join(",");
+        csvContent += row + "\n";
+      });
+
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `presenze_NOM_HR_${startDate || 'inizio'}_al_${endDate || 'fine'}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      let excelContent = `<table border="1"><tr><th>Data</th><th>Dipendente</th><th>Ingresso</th><th>Uscita</th><th>Stato</th></tr>`;
+      filtered.forEach(l => {
+        excelContent += `<tr>
+          <td>${l.date}</td>
+          <td>${l.empName}</td>
+          <td>${l.inTime || l.time || ''}</td>
+          <td>${l.outTime || ''}</td>
+          <td>${l.status === 'present' ? 'In Orario' : 'In Ritardo'}</td>
+        </tr>`;
+      });
+      excelContent += `</table>`;
+
+      const blob = new Blob([excelContent], { type: 'application/vnd.ms-excel' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `presenze_NOM_HR_${startDate || 'inizio'}_al_${endDate || 'fine'}.xls`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  }
+
+  // Render Kiosk & Classifica
+  function renderKioskGrid() {
+    const grid = document.getElementById('kiosk-grid');
+
+    const currentShiftLogs = [];
+    employees.forEach(e => {
+      const activeLog = getCurrentShiftLog(e.id);
+      if(activeLog) currentShiftLogs.push(activeLog);
+    });
+
+    currentShiftLogs.sort((a, b) => {
+      const timeA = a.inTime || a.time || '00:00';
+      const timeB = b.inTime || b.time || '00:00';
+      return timeA.localeCompare(timeB);
+    });
+
+    let onTimeCounter = 0;
+    const empIconMap = {};
+
+    currentShiftLogs.forEach(log => {
+      if(log.status === 'late') {
+        empIconMap[log.empId] = '👎';
+      } else {
+        onTimeCounter++;
+        if(onTimeCounter === 1) empIconMap[log.empId] = '👑';
+        else if(onTimeCounter === 2) empIconMap[log.empId] = '🥈';
+        else if(onTimeCounter === 3) empIconMap[log.empId] = '🥉';
+        else empIconMap[log.empId] = '';
+      }
+    });
+
+    grid.innerHTML = employees.map(e => {
+      const activeLog = getCurrentShiftLog(e.id);
+      let statusClass = 'absent';
+      let statusText = 'Assente';
+      const icon = empIconMap[e.id] ? ` ${empIconMap[e.id]}` : '';
+
+      if(activeLog) {
+        statusClass = activeLog.status;
+        const displayTime = activeLog.inTime || activeLog.time || '--:--';
+        statusText = (activeLog.status === 'present' ? 'Presente' : 'In Ritardo') + ' (' + displayTime + ')';
+      }
+
+      return `
+        <div class="emp-card ${statusClass}" 
+             style="${isCooldown ? 'opacity: 0.6; cursor: not-allowed;' : ''}"
+             onclick="performClockIn(${e.id})">
+          <div class="name">${e.name}${icon}</div>
+          <div class="status-time">${statusText}</div>
+        </div>
+      `;
+    }).join('');
+
+    const leaderboardContainer = document.getElementById('table-leaderboard');
+    if(currentShiftLogs.length === 0) {
+      leaderboardContainer.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#94a3b8;">Nessuna timbratura.</td></tr>';
+    } else {
+      leaderboardContainer.innerHTML = currentShiftLogs.map((log, index) => {
+        const icon = empIconMap[log.empId] || '';
+        const displayTime = log.inTime || log.time || '--:--';
+        return `
+          <tr>
+            <td><strong>#${index + 1}</strong></td>
+            <td>${log.empName}</td>
+            <td>${displayTime}</td>
+            <td>${icon ? icon + ' ' : ''}${log.status === 'present' ? '<span style="color:var(--present); font-weight:bold;">Ok</span>' : '<span style="color:var(--late); font-weight:bold;">Ritardo</span>'}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+  }
+
+  function renderTasks() {
+    document.getElementById('tasks-grid').innerHTML = tasks.map(t => `
+      <div class="task-card ${t.done ? 'done' : 'pending'}" onclick="openTaskModal(${t.id})">
+        <button class="task-delete-btn" onclick="deleteTask(${t.id}, event)">×</button>
+        <div class="title">${t.title}</div>
+        <div class="assignees">
+          ${t.done ? 'Svolta da: ' + t.assignees.join(', ') : 'Da svolgere'}
+        </div>
+      </div>
+    `).join('');
+
+    document.getElementById('task-chat').innerHTML = taskLogs.length ? taskLogs.map(l => `
+      <div class="chat-msg">
+        <span class="time">[${l.time}]</span> ${l.msg}
+      </div>
+    `).join('') : '<div style="color:#94a3b8; font-size:0.85rem; text-align:center; margin-top:20px;">Nessuna attività registrata.</div>';
+
+    const assignedEmpsSet = new Set();
+    tasks.filter(t => t.done).forEach(t => t.assignees.forEach(a => assignedEmpsSet.add(a)));
+
+    const assignedListContainer = document.getElementById('assigned-employees-list');
+    if(assignedEmpsSet.size === 0) {
+      assignedListContainer.innerHTML = '<div style="color:#94a3b8; font-size:0.85rem; text-align:center;">Nessuna mansione assegnata al momento.</div>';
+    } else {
+      assignedListContainer.innerHTML = Array.from(assignedEmpsSet).map(name => {
+        const taskCount = tasks.filter(t => t.done && t.assignees.includes(name)).length;
+        return `
+          <div class="assigned-emp-badge" onclick="openEmpTasksSummaryModal('${name}')">
+            <span>👤 ${name}</span>
+            <span style="font-size:0.8rem; background:white; padding:2px 8px; border-radius:10px;">${taskCount} mansion${taskCount > 1 ? 'i' : 'e'}</span>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+
+  function renderEmployeeTable() {
+    document.getElementById('table-employees').innerHTML = employees.map(e => `
+      <tr>
+        <td>${e.name}</td>
+        <td>${e.role}</td>
+        <td><button onclick="deleteEmployee(${e.id})" style="background:var(--late);">Elimina</button></td>
+      </tr>
+    `).join('');
+  }
+
+  function renderShiftsTable() {
+    document.getElementById('table-shifts').innerHTML = shifts.map(s => `
+      <tr>
+        <td>${s.name}</td>
+        <td>${s.start}</td>
+        <td>${s.tolerance} min</td>
+        <td>${s.early || 10} min</td>
+        <td><button onclick="deleteShift(${s.id})" style="background:var(--late);">Elimina</button></td>
+      </tr>
+    `).join('');
+  }
+
+  // Calendario
+  function changeMonth(delta) {
+    currentCalDate.setMonth(currentCalDate.getMonth() + delta);
+    renderCalendar();
+  }
+
+  function renderCalendar() {
+    const year = currentCalDate.getFullYear();
+    const month = currentCalDate.getMonth();
+
+    const monthNames = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"];
+    document.getElementById('cal-month-year').textContent = `${monthNames[month]} ${year}`;
+
+    const firstDayIndex = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const paddingDays = (firstDayIndex === 0 ? 6 : firstDayIndex - 1);
+
+    const daysContainer = document.getElementById('calendar-days');
+    daysContainer.innerHTML = '';
+
+    for(let i = 0; i < paddingDays; i++) {
+      daysContainer.innerHTML += `<div class="cal-day empty"></div>`;
+    }
+
+    for(let day = 1; day <= daysInMonth; day++) {
+      const dStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const hasLogs = clockLogs.some(l => l.date === dStr);
+      const isActive = dStr === selectedDateStr;
+
+      daysContainer.innerHTML += `
+        <div class="cal-day ${isActive ? 'active-day' : ''} ${hasLogs ? 'has-logs' : ''}" onclick="selectDate('${dStr}')">
+          ${day}
+          ${hasLogs ? '<div style="font-size:10px; color:var(--primary);">• presenze</div>' : ''}
+        </div>
+      `;
+    }
+
+    renderDailyLogs();
+  }
+
+  function selectDate(dStr) {
+    selectedDateStr = dStr;
+    renderCalendar();
+  }
+
+  function renderDailyLogs() {
+    document.getElementById('selected-date-title').textContent = `Presenze del ${selectedDateStr.split('-').reverse().join('/')}`;
+    const logs = clockLogs.filter(l => l.date === selectedDateStr);
+
+    document.getElementById('table-daily-logs').innerHTML = logs.length ? logs.map(l => {
+      const displayInTime = l.inTime || l.time || '--:--';
+      const displayOutTime = l.outTime || '--:--';
+      return `
+        <tr>
+          <td>${displayInTime}</td>
+          <td>${displayOutTime}</td>
+          <td>${l.empName}</td>
+          <td><span style="color: ${l.status === 'present' ? 'var(--present)' : 'var(--late)'}; font-weight: bold;">
+            ${l.status === 'present' ? 'In orario' : 'In ritardo'}
+          </span></td>
+        </tr>
+      `;
+    }).join('') : '<tr><td colspan="4">Nessuna timbratura per questa data.</td></tr>';
+  }
+
+  function renderAll() {
+    renderKioskGrid();
+    renderTasks();
+    renderWheelChecklist();
+    renderEmployeeTable();
+    renderShiftsTable();
+    renderCalendar();
+  }
+
+  // Boot
+  renderAll();
+</script>
+
+<!-- REGISTRAZIONE SERVICE WORKER PWA -->
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./service-worker.js')
+        .then((reg) => console.log('Service Worker PWA Registrato con successo:', reg.scope))
+        .catch((err) => console.log('Errore registrazione Service Worker PWA:', err));
+    });
+  }
+</script>
+</body>
+</html>
