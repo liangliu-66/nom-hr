@@ -250,7 +250,7 @@
 
         <div class="card">
           <h3>Checklist Mansioni</h3>
-          <p style="color: #64748b; font-size: 0.85rem; margin-bottom: 10px;">Clicca per assegnare. Clicca sulla 'X' per eliminare.</p>
+          <p style="color: #64748b; font-size: 0.85rem; margin-bottom: 10px;">Clicca per assegnare. Si resettano alle 15:00 e alle 23:00.</p>
           <div id="tasks-grid" class="emp-grid"></div>
         </div>
       </div>
@@ -335,7 +335,7 @@
       <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
         <div>
           <h2>📊 Riepilogo Mensile Presenze</h2>
-          <p style="color: #64748b; font-size: 0.85rem; margin-top: 2px;">Conteggio cumulativo dal $1^\circ$ del mese fino al giorno selezionato/corrente.</p>
+          <p style="color: #64748b; font-size: 0.85rem; margin-top: 2px;">Conteggio cumulativo dal 1° del mese fino al giorno selezionato/corrente.</p>
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
           <label style="font-weight: bold; font-size: 0.9rem;">Periodo:</label>
@@ -578,7 +578,10 @@
   let goods = JSON.parse(localStorage.getItem('hr_goods')) || [];
   let goodsLogs = JSON.parse(localStorage.getItem('hr_goods_logs')) || [];
   let wheelHistory = JSON.parse(localStorage.getItem('hr_wheel_history')) || [];
-  let lastDailyResetDate = localStorage.getItem('hr_daily_reset_date') || '';
+  
+  let lastShift15ResetDate = localStorage.getItem('hr_shift15_reset_date') || '';
+  let lastShift23ResetDate = localStorage.getItem('hr_shift23_reset_date') || '';
+
   let wheelEmployees = JSON.parse(localStorage.getItem('hr_wheel_emps')) || [];
 
   let isDarkMode = localStorage.getItem('hr_dark_mode') === 'true';
@@ -597,21 +600,20 @@
   let isSpinning = false;
   const wheelColors = ['#2563eb', '#16a34a', '#dc2626', '#d97706', '#9333ea', '#0891b2', '#e11d48', '#4d7c0f'];
 
-  // SUONI FEEDBACK DIFFERENZIATI (WEB AUDIO API)
+  // SUONI FEEDBACK DIFFERENZIATI
   function playClockInBeep(isLate) {
     try {
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       
       if (!isLate) {
-        // SUONO IN ORARIO: Bip acuto e positivo (due toni salienti)
         const osc1 = audioCtx.createOscillator();
         const osc2 = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
 
         osc1.type = 'sine';
-        osc1.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+        osc1.frequency.setValueAtTime(523.25, audioCtx.currentTime);
         osc2.type = 'sine';
-        osc2.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1); // E5
+        osc2.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1);
 
         gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
@@ -626,13 +628,12 @@
         osc2.stop(audioCtx.currentTime + 0.3);
 
       } else {
-        // SUONO IN RITARDO: Suono basso e drammatico (frequenza discendente tipo errore)
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
 
         osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(220, audioCtx.currentTime); // A3
-        osc.frequency.exponentialRampToValueAtTime(110, audioCtx.currentTime + 0.4); // A2 (Discesa)
+        osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(110, audioCtx.currentTime + 0.4);
 
         gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
@@ -667,30 +668,60 @@
     initDarkMode();
   }
 
-  // Clock & Auto-Reset alle 23:00
+  // Funzione Reset Stato Mansioni (Comune per 15:00 e 23:00)
+  function resetTasksState() {
+    tasks.forEach(t => {
+      t.done = false;
+      t.assignees = [];
+    });
+    localStorage.setItem('hr_tasks_v2', JSON.stringify(tasks));
+  }
+
+  // Clock & Controllo Reset Automatizzato (alle 15:00 e alle 23:00)
   setInterval(() => {
     const now = new Date();
     document.getElementById('current-clock').textContent = now.toLocaleDateString('it-IT') + ' ' + now.toLocaleTimeString('it-IT');
-    checkDailyAutoReset(now);
+    checkAutoResets(now);
   }, 1000);
 
-  function checkDailyAutoReset(now) {
+  function checkAutoResets(now) {
     const todayStr = now.toISOString().split('T')[0];
-    if (now.getHours() >= 23 && lastDailyResetDate !== todayStr) {
+    const hour = now.getHours();
+
+    // RESET TURNO 1 (ORE 15:00)
+    if (hour >= 15 && hour < 23 && lastShift15ResetDate !== todayStr) {
+      resetTasksState();
+      
+      const nowTime = now.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+      taskLogs.unshift({ time: nowTime, msg: `🔄 Cambio Turno (15:00): Mansioni resettate per il turno pomeridiano/serale.` });
+      localStorage.setItem('hr_task_logs', JSON.stringify(taskLogs));
+
+      lastShift15ResetDate = todayStr;
+      localStorage.setItem('hr_shift15_reset_date', todayStr);
+      renderAll();
+    }
+
+    // RESET TURNO 2 (ORE 23:00)
+    if (hour >= 23 && lastShift23ResetDate !== todayStr) {
+      // 1. Reset Mansioni
+      resetTasksState();
       taskLogs = [];
       localStorage.setItem('hr_task_logs', JSON.stringify([]));
 
+      // 2. Reset Storico Ruota
       wheelHistory = [];
       localStorage.setItem('hr_wheel_history', JSON.stringify([]));
 
+      // 3. Reset Merce Spuntata
       goods = goods.filter(g => !g.checked);
       localStorage.setItem('hr_goods', JSON.stringify(goods));
       
+      // 4. Reset Log Merce
       goodsLogs = [];
       localStorage.setItem('hr_goods_logs', JSON.stringify([]));
 
-      lastDailyResetDate = todayStr;
-      localStorage.setItem('hr_daily_reset_date', todayStr);
+      lastShift23ResetDate = todayStr;
+      localStorage.setItem('hr_shift23_reset_date', todayStr);
       renderAll();
     }
   }
@@ -839,7 +870,7 @@
 
     if(emp) {
       const isLate = createClockInRecord(emp, now, todayStr);
-      playClockInBeep(isLate); // Suono appropriato
+      playClockInBeep(isLate);
       closeConfirmClockModal();
       startCooldown();
       renderAll();
@@ -1340,7 +1371,7 @@
     const now = new Date();
     
     let targetYear = now.getFullYear();
-    let targetMonth = now.getMonth(); // 0-indexed
+    let targetMonth = now.getMonth();
 
     if (period === 'previous') {
       targetMonth -= 1;
@@ -1350,17 +1381,14 @@
       }
     }
 
-    // Determina il giorno finale fino a cui calcolare
     const daysInTargetMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
     let maxDay = daysInTargetMonth;
 
     if (period === 'current') {
-      maxDay = now.getDate(); // Fino al giorno corrente
+      maxDay = now.getDate();
     }
 
-    // Ordina dipendenti in ordine alfabetico
     const sortedEmployees = [...employees].sort((a, b) => a.name.localeCompare(b.name, 'it', { sensitivity: 'base' }));
-
     const container = document.getElementById('table-monthly-summary');
 
     if (sortedEmployees.length === 0) {
@@ -1373,17 +1401,13 @@
       let lateDays = 0;
       let absentDays = 0;
 
-      // Scansiona giorno per giorno dal 1° al giorno limite
       for (let day = 1; day <= maxDay; day++) {
         const dateStr = `${targetYear}-${String(targetMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        
-        // Cerca tutte le timbrature del dipendente nel giorno
         const dayLogs = clockLogs.filter(l => l.empId === emp.id && l.date === dateStr);
 
         if (dayLogs.length === 0) {
           absentDays++;
         } else {
-          // SE C'È ALMENO UN RITARDO NEL GIORNO, PREVALE IL RITARDO
           const hasLate = dayLogs.some(l => l.status === 'late');
           if (hasLate) {
             lateDays++;
