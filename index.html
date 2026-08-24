@@ -21,26 +21,44 @@
       --absent: #94a3b8;
       --late: #ef4444;
       --sidebar-width: 280px;
+      --sidebar-bg: #1e293b;
+      --sidebar-text: #94a3b8;
+      --sidebar-header: #93c5fd;
+      --table-header: #f1f5f9;
+    }
+
+    /* DARK MODE STYLES */
+    body.dark-mode {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --text: #f8fafc;
+      --border: #334155;
+      --sidebar-bg: #0f172a;
+      --sidebar-text: #cbd5e1;
+      --sidebar-header: #60a5fa;
+      --table-header: #334155;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
-    body { background-color: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
+    body { background-color: var(--bg); color: var(--text); display: flex; min-height: 100vh; transition: background-color 0.3s, color 0.3s; }
 
     /* SIDEBAR */
     sidebar {
       width: var(--sidebar-width);
-      background: #1e293b;
+      background: var(--sidebar-bg);
       color: white;
       padding: 30px 15px;
       display: flex;
       flex-direction: column;
       flex-shrink: 0;
-      box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+      box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+      justify-content: space-between;
+      transition: background-color 0.3s;
     }
 
     sidebar h2 {
       font-size: 1.3rem;
-      color: #93c5fd;
+      color: var(--sidebar-header);
       padding: 0 12px 24px 12px;
       border-bottom: 1px solid #334155;
       margin-bottom: 20px;
@@ -55,7 +73,7 @@
       background: none;
       font-size: 1rem;
       font-weight: 600;
-      color: #94a3b8;
+      color: var(--sidebar-text);
       cursor: pointer;
       text-align: left;
       width: 100%;
@@ -66,6 +84,23 @@
     .tab-btn:hover { background: #334155; color: white; }
     .tab-btn.active { background: var(--primary); color: white; box-shadow: 0 2px 6px rgba(37,99,235,0.3); }
 
+    .theme-toggle-btn {
+      margin-top: 20px;
+      background: #334155;
+      color: #f8fafc;
+      border: 1px solid var(--border);
+      padding: 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.2s;
+    }
+    .theme-toggle-btn:hover { background: #475569; }
+
     /* MAIN CONTENT */
     main { flex: 1; padding: 30px; overflow-y: auto; }
     header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 12px; border-bottom: 2px solid var(--border); }
@@ -73,13 +108,13 @@
     .tab-content { display: none; }
     .tab-content.active { display: block; }
 
-    .card { background: var(--card-bg); padding: 22px; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .card { background: var(--card-bg); padding: 22px; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); transition: background-color 0.3s, border-color 0.3s; }
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
     .grid-kiosk { display: grid; grid-template-columns: 1.8fr 1.2fr; gap: 20px; }
     @media(max-width: 1100px) { .grid-kiosk { grid-template-columns: 1fr; } }
     @media(max-width: 960px) { body { flex-direction: column; } sidebar { width: 100%; } .grid-2 { grid-template-columns: 1fr; } }
 
-    input, select, button { padding: 10px 14px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.95rem; }
+    input, select, button { padding: 10px 14px; border-radius: 6px; border: 1px solid var(--border); font-size: 0.95rem; background-color: var(--card-bg); color: var(--text); }
     button { background: var(--primary); color: white; border: none; font-weight: 600; cursor: pointer; transition: background 0.2s; }
     button:hover { opacity: 0.95; }
     button:disabled { background: #cbd5e1; cursor: not-allowed; }
@@ -98,15 +133,15 @@
     #cooldown-banner { display: none; background: #fef3c7; color: #92400e; padding: 12px; border-radius: 6px; text-align: center; font-weight: bold; margin-bottom: 16px; }
 
     /* MODALE */
-    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 100; }
-    .modal-content { background: white; padding: 24px; border-radius: 8px; text-align: center; max-width: 420px; width: 90%; }
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 100; }
+    .modal-content { background: var(--card-bg); color: var(--text); padding: 24px; border-radius: 8px; text-align: center; max-width: 420px; width: 90%; border: 1px solid var(--border); }
 
     /* CALENDARIO */
     .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
     .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center; }
-    .cal-day-header { font-weight: bold; padding: 8px 0; background: #f1f5f9; border-radius: 4px; }
-    .cal-day { padding: 14px 4px; background: #ffffff; border: 1px solid var(--border); border-radius: 4px; cursor: pointer; min-height: 50px; }
-    .cal-day.active-day { border-color: var(--primary); font-weight: bold; background: #eff6ff; }
+    .cal-day-header { font-weight: bold; padding: 8px 0; background: var(--table-header); border-radius: 4px; }
+    .cal-day { padding: 14px 4px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; min-height: 50px; }
+    .cal-day.active-day { border-color: var(--primary); font-weight: bold; background: rgba(37,99,235,0.15); }
     .cal-day.has-logs { font-weight: bold; }
     .cal-day.empty { background: transparent; border: none; cursor: default; }
 
@@ -119,15 +154,14 @@
     .task-delete-btn { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.2); border: none; color: white; border-radius: 4px; width: 24px; height: 24px; font-weight: bold; cursor: pointer; line-height: 20px; }
     .task-delete-btn:hover { background: rgba(220, 38, 38, 0.8); }
 
-    .goods-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; }
+    .goods-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; }
     .goods-item.checked span { text-decoration: line-through; color: #94a3b8; }
 
-    .chat-box { background: #f8fafc; border: 1px solid var(--border); border-radius: 6px; padding: 12px; height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-    .chat-msg { background: white; border: 1px solid var(--border); padding: 8px 12px; border-radius: 6px; font-size: 0.88rem; }
+    .chat-box { background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; padding: 12px; height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+    .chat-msg { background: var(--table-header); border: 1px solid var(--border); padding: 8px 12px; border-radius: 6px; font-size: 0.88rem; }
     .chat-msg .time { font-weight: bold; color: var(--primary); margin-right: 6px; }
 
-    .assigned-emp-badge { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; padding: 10px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s; }
-    .assigned-emp-badge:hover { background: #dbeafe; }
+    .assigned-emp-badge { background: rgba(37,99,235,0.1); border: 1px solid var(--primary); color: var(--text); padding: 10px 14px; border-radius: 6px; cursor: pointer; font-weight: 600; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s; }
 
     /* RUOTA */
     .wheel-container { display: flex; flex-direction: column; align-items: center; position: relative; }
@@ -136,24 +170,31 @@
 
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
     th, td { text-align: left; padding: 10px; border-bottom: 1px solid var(--border); }
-    th { background: #f1f5f9; }
+    th { background: var(--table-header); color: var(--text); }
   </style>
 </head>
 <body>
 
 <!-- SIDEBAR -->
 <sidebar>
-  <h2>NOM HR</h2>
-  <div class="nav-list">
-    <button class="tab-btn active" onclick="switchTab('kiosk')">Kiosk Clock In</button>
-    <button class="tab-btn" onclick="switchTab('mansioni')">Mansioni</button>
-    <button class="tab-btn" onclick="switchTab('merce')">Merce</button>
-    <button class="tab-btn" onclick="switchTab('ruota')">Ruota</button>
-    <button class="tab-btn" onclick="requestAdminAccess('dipendenti')">Anagrafica Dipendenti 🔒</button>
-    <button class="tab-btn" onclick="requestAdminAccess('presenze')">Registro Calendario 🔒</button>
-    <button class="tab-btn" onclick="requestAdminAccess('turni')">Orari e Turni 🔒</button>
-    <button class="tab-btn" onclick="requestAdminAccess('settings')">Impostazioni PIN 🔒</button>
+  <div>
+    <h2>NOM HR</h2>
+    <div class="nav-list">
+      <button class="tab-btn active" onclick="switchTab('kiosk')">Kiosk Clock In</button>
+      <button class="tab-btn" onclick="switchTab('mansioni')">Mansioni</button>
+      <button class="tab-btn" onclick="switchTab('merce')">Merce</button>
+      <button class="tab-btn" onclick="switchTab('ruota')">Ruota</button>
+      <button class="tab-btn" onclick="requestAdminAccess('dipendenti')">Anagrafica Dipendenti 🔒</button>
+      <button class="tab-btn" onclick="requestAdminAccess('presenze')">Registro Calendario 🔒</button>
+      <button class="tab-btn" onclick="requestAdminAccess('turni')">Orari e Turni 🔒</button>
+      <button class="tab-btn" onclick="requestAdminAccess('settings')">Impostazioni PIN 🔒</button>
+    </div>
   </div>
+
+  <!-- PULSANTE TEMA SCURO IN BASSO ALLA SIDEBAR -->
+  <button class="theme-toggle-btn" onclick="toggleDarkMode()">
+    <span id="theme-btn-icon">🌙</span> <span id="theme-btn-text">Tema Scuro</span>
+  </button>
 </sidebar>
 
 <!-- MAIN -->
@@ -231,7 +272,7 @@
     </div>
   </div>
 
-  <!-- TAB NUOVO: MERCE -->
+  <!-- TAB MERCE -->
   <div id="tab-merce" class="tab-content">
     <div class="grid-2">
       <div>
@@ -435,7 +476,7 @@
 <div id="confirm-clock-modal" class="modal">
   <div class="modal-content" style="max-width: 380px;">
     <h3>Conferma Clock In</h3>
-    <p id="confirm-clock-msg" style="margin: 14px 0; font-size: 1rem; color: #1e293b;"></p>
+    <p id="confirm-clock-msg" style="margin: 14px 0; font-size: 1rem; color: var(--text);"></p>
     <div style="display: flex; gap: 10px; margin-top: 16px;">
       <button onclick="closeConfirmClockModal()" style="flex:1; background: #94a3b8;">Annulla</button>
       <button onclick="executeConfirmedClockIn()" style="flex:1; background: var(--present);">Conferma</button>
@@ -454,19 +495,23 @@
   </div>
 </div>
 
+<!-- MODALE MODIFICA ORARIO CON PULSANTE ANNULLA TIMBRATURA -->
 <div id="edit-clock-modal" class="modal">
-  <div class="modal-content" style="max-width: 380px;">
-    <h3>Modifica Orario Clock In</h3>
+  <div class="modal-content" style="max-width: 400px;">
+    <h3>Gestione Timbratura</h3>
     <p id="edit-clock-emp-name" style="margin: 8px 0; font-weight: bold; color: var(--primary);"></p>
-    <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 12px;">Seleziona il nuovo orario di ingresso:</p>
+    <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 12px;">Modifica l'orario oppure cancella la timbratura per consentire un nuovo Clock In:</p>
     
     <div style="display: flex; justify-content: center; margin-bottom: 20px;">
       <input type="time" id="edit-clock-time-input" style="font-size: 1.4rem; padding: 10px; text-align: center; width: 180px;" required>
     </div>
 
-    <div style="display: flex; gap: 10px;">
-      <button onclick="closeEditClockModal()" style="flex:1; background: #94a3b8;">Annulla</button>
-      <button onclick="saveClockInEdit()" style="flex:1; background: var(--present);">Salva Modifica</button>
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <div style="display: flex; gap: 10px;">
+        <button onclick="closeEditClockModal()" style="flex:1; background: #94a3b8;">Esci</button>
+        <button onclick="saveClockInEdit()" style="flex:1; background: var(--present);">Salva Modifica</button>
+      </div>
+      <button onclick="cancelClockInRecord()" style="background: var(--late); width: 100%; padding: 12px;">❌ Annulla / Elimina Clock In</button>
     </div>
   </div>
 </div>
@@ -509,6 +554,8 @@
   let lastDailyResetDate = localStorage.getItem('hr_daily_reset_date') || '';
   let wheelEmployees = JSON.parse(localStorage.getItem('hr_wheel_emps')) || [];
 
+  let isDarkMode = localStorage.getItem('hr_dark_mode') === 'true';
+
   let pendingTab = null;
   let isCooldown = false;
   let cooldownTimer = null;
@@ -523,6 +570,49 @@
   let isSpinning = false;
   const wheelColors = ['#2563eb', '#16a34a', '#dc2626', '#d97706', '#9333ea', '#0891b2', '#e11d48', '#4d7c0f'];
 
+  // SUONO FEEDBACK (Web Audio API)
+  function playClockInBeep() {
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, audioCtx.currentTime); // Nota La (A5)
+      osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.15);
+
+      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.15);
+    } catch(e) {
+      console.log('Audio non supportato o bloccato');
+    }
+  }
+
+  // TEMA SCURO (DARK MODE)
+  function initDarkMode() {
+    if(isDarkMode) {
+      document.body.classList.add('dark-mode');
+      document.getElementById('theme-btn-icon').textContent = '☀️';
+      document.getElementById('theme-btn-text').textContent = 'Tema Chiaro';
+    } else {
+      document.body.classList.remove('dark-mode');
+      document.getElementById('theme-btn-icon').textContent = '🌙';
+      document.getElementById('theme-btn-text').textContent = 'Tema Scuro';
+    }
+  }
+
+  function toggleDarkMode() {
+    isDarkMode = !isDarkMode;
+    localStorage.setItem('hr_dark_mode', isDarkMode);
+    initDarkMode();
+  }
+
   // Clock & Auto-Reset alle 23:00
   setInterval(() => {
     const now = new Date();
@@ -533,19 +623,15 @@
   function checkDailyAutoReset(now) {
     const todayStr = now.toISOString().split('T')[0];
     if (now.getHours() >= 23 && lastDailyResetDate !== todayStr) {
-      // 1. Reset mini-chat mansioni
       taskLogs = [];
       localStorage.setItem('hr_task_logs', JSON.stringify([]));
 
-      // 2. Reset storico ruota
       wheelHistory = [];
       localStorage.setItem('hr_wheel_history', JSON.stringify([]));
 
-      // 3. Reset merce spuntata (rimangono solo quelle non marcate)
       goods = goods.filter(g => !g.checked);
       localStorage.setItem('hr_goods', JSON.stringify(goods));
       
-      // 4. Reset mini-chat merce
       goodsLogs = [];
       localStorage.setItem('hr_goods_logs', JSON.stringify([]));
 
@@ -699,6 +785,7 @@
 
     if(emp) {
       createClockInRecord(emp, now, todayStr);
+      playClockInBeep(); // Riproduci suono di feedback
       closeConfirmClockModal();
       startCooldown();
       renderAll();
@@ -811,6 +898,20 @@
     renderAll();
   }
 
+  // ANNULLA / ELIMINA CLOCK IN (RIPORTA A GRIGIO)
+  function cancelClockInRecord() {
+    const activeLog = getCurrentShiftLog(targetEmpForEditId);
+    if (!activeLog) return;
+
+    if (confirm("Sei sicuro di voler ANNULLARE il Clock In di questo dipendente? Il riquadro tornerà grigio (Assente).")) {
+      clockLogs = clockLogs.filter(l => l.id !== activeLog.id);
+      localStorage.setItem('hr_logs', JSON.stringify(clockLogs));
+      alert("Timbratura annullata con successo!");
+      closeEditClockModal();
+      renderAll();
+    }
+  }
+
   function startCooldown() {
     isCooldown = true;
     let count = 5;
@@ -898,7 +999,7 @@
     const container = document.getElementById('modal-emp-checklist');
 
     container.innerHTML = employees.map(e => `
-      <label style="display:flex; align-items:center; gap:8px; background:#f1f5f9; padding:8px; border-radius:4px; cursor:pointer;">
+      <label style="display:flex; align-items:center; gap:8px; background:var(--table-header); padding:8px; border-radius:4px; cursor:pointer;">
         <input type="checkbox" value="${e.name}" ${task.assignees.includes(e.name) ? 'checked' : ''}>
         <span>${e.name} (${e.role})</span>
       </label>
@@ -964,8 +1065,8 @@
         const log = taskLogs.find(l => l.msg.includes(`"${t.title}"`) && l.msg.includes(empName));
         const timeStr = log ? log.time : 'In giornata';
         return `
-          <div style="padding:10px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; margin-bottom:8px;">
-            <div style="font-weight:bold; color:#1e293b;">${t.title}</div>
+          <div style="padding:10px; background:var(--table-header); border:1px solid var(--border); border-radius:6px; margin-bottom:8px;">
+            <div style="font-weight:bold; color:var(--text);">${t.title}</div>
             <div style="font-size:0.8rem; color:#64748b; margin-top:2px;">Completata alle ore: ${timeStr}</div>
           </div>
         `;
@@ -1006,7 +1107,7 @@
     const now = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
     goodsLogs.unshift({ 
       time: now, 
-      msg: item.checked ? `Articolo marcato come ACQUISTATO: "${item.title}"` : `Articolo DESELETZIONATO: "${item.title}"` 
+      msg: item.checked ? `Articolo marcato come ACQUISTATO: "${item.title}"` : `Articolo DESELEZIONATO: "${item.title}"` 
     });
     localStorage.setItem('hr_goods_logs', JSON.stringify(goodsLogs));
 
@@ -1058,7 +1159,7 @@
     if(wheelEmployees.length === 0) wheelEmployees = employees.map(e => e.name);
 
     container.innerHTML = employees.map(e => `
-      <label style="display:flex; align-items:center; gap:8px; background:#f1f5f9; padding:8px; border-radius:4px; cursor:pointer;">
+      <label style="display:flex; align-items:center; gap:8px; background:var(--table-header); padding:8px; border-radius:4px; cursor:pointer;">
         <input type="checkbox" value="${e.name}" ${wheelEmployees.includes(e.name) ? 'checked' : ''} onchange="updateWheelEmpsSelection()">
         <span>${e.name}</span>
       </label>
@@ -1242,7 +1343,6 @@
           if (data.wheelHistory) localStorage.setItem('hr_wheel_history', JSON.stringify(data.wheelHistory));
           if (data.wheelEmployees) localStorage.setItem('hr_wheel_emps', JSON.stringify(data.wheelEmployees));
 
-          // Aggiorna variabili di stato
           adminPin = localStorage.getItem('hr_pin') || '0104';
           employees = JSON.parse(localStorage.getItem('hr_employees')) || [];
           clockLogs = JSON.parse(localStorage.getItem('hr_logs')) || [];
@@ -1429,7 +1529,7 @@
         return `
           <div class="assigned-emp-badge" onclick="openEmpTasksSummaryModal('${name}')">
             <span>👤 ${name}</span>
-            <span style="font-size:0.8rem; background:white; padding:2px 8px; border-radius:10px;">${taskCount} mansion${taskCount > 1 ? 'i' : 'e'}</span>
+            <span style="font-size:0.8rem; background:var(--card-bg); padding:2px 8px; border-radius:10px;">${taskCount} mansion${taskCount > 1 ? 'i' : 'e'}</span>
           </div>
         `;
       }).join('');
@@ -1524,6 +1624,7 @@
   }
 
   function renderAll() {
+    initDarkMode();
     renderKioskGrid();
     renderTasks();
     renderGoods();
