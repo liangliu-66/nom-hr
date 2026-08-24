@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nom-hr-v3';
+const CACHE_NAME = 'nom-hr-v4';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
