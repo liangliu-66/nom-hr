@@ -101,6 +101,15 @@
     }
     .theme-toggle-btn:hover { background: #475569; }
 
+    /* VERSION BADGE IN SIDEBAR */
+    .app-version-tag {
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--sidebar-text);
+      opacity: 0.7;
+      margin-top: 12px;
+    }
+
     /* MAIN CONTENT */
     main { flex: 1; padding: 30px; overflow-y: auto; }
     header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 12px; border-bottom: 2px solid var(--border); }
@@ -192,9 +201,12 @@
     </div>
   </div>
 
-  <button class="theme-toggle-btn" onclick="toggleDarkMode()">
-    <span id="theme-btn-icon">🌙</span> <span id="theme-btn-text">Tema Scuro</span>
-  </button>
+  <div>
+    <button class="theme-toggle-btn" onclick="toggleDarkMode()">
+      <span id="theme-btn-icon">🌙</span> <span id="theme-btn-text">Tema Scuro</span>
+    </button>
+    <div class="app-version-tag" id="app-version-display">Versione: v6</div>
+  </div>
 </sidebar>
 
 <!-- MAIN -->
@@ -565,6 +577,9 @@
 </div>
 
 <script>
+  // APP VERSION CONSTANT
+  const APP_VERSION = 'v7';
+
   // State Initialization
   let adminPin = localStorage.getItem('hr_pin') || '0104';
   let employees = JSON.parse(localStorage.getItem('hr_employees')) || [];
@@ -878,7 +893,6 @@
     if(shifts.length === 0) return false;
     const currentMin = dateObj.getHours() * 60 + dateObj.getMinutes();
     
-    // Trova il turno più vicino o la tolleranza
     return shifts.every(s => {
       const [h, m] = s.start.split(':').map(Number);
       const shiftStartMin = h * 60 + m + parseInt(s.tolerance);
@@ -1609,7 +1623,7 @@
       const icon = empIconMap[e.id] ? ` ${empIconMap[e.id]}` : '';
 
       if(activeLog) {
-        statusClass = activeLog.status; // 'present' (Verde) o 'late' (Rosso)
+        statusClass = activeLog.status;
         const displayTime = activeLog.inTime || activeLog.time || '--:--';
         statusText = (activeLog.status === 'present' ? 'Presente' : 'In Ritardo') + ' (' + displayTime + ')';
       }
@@ -1768,6 +1782,7 @@
 
   function renderAll() {
     initDarkMode();
+    document.getElementById('app-version-display').textContent = `Versione: ${APP_VERSION}`;
     renderKioskGrid();
     renderTasks();
     renderGoods();
