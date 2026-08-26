@@ -123,9 +123,9 @@
     .emp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; margin-top: 15px; }
     .emp-card { padding: 20px; border-radius: 12px; text-align: center; color: white; cursor: pointer; user-select: none; transition: transform 0.1s; display: flex; flex-direction: column; justify-content: space-between; min-height: 130px; }
     .emp-card:active { transform: scale(0.98); }
-    .emp-card.absent { background-color: var(--absent); }
-    .emp-card.present { background-color: var(--present); }
-    .emp-card.late { background-color: var(--late); }
+    .emp-card.absent { background-color: var(--absent) !important; }
+    .emp-card.present { background-color: var(--present) !important; }
+    .emp-card.late { background-color: var(--late) !important; }
     .emp-card .name { font-size: 1.1rem; font-weight: bold; margin-bottom: 6px; }
     .emp-card .status-time { font-size: 0.85rem; opacity: 0.95; }
 
@@ -668,7 +668,7 @@
     initDarkMode();
   }
 
-  // Funzione Reset Stato Mansioni (Comune per 15:00 e 23:00)
+  // Funzione Reset Stato Mansioni
   function resetTasksState() {
     tasks.forEach(t => {
       t.done = false;
@@ -703,20 +703,16 @@
 
     // RESET TURNO 2 (ORE 23:00)
     if (hour >= 23 && lastShift23ResetDate !== todayStr) {
-      // 1. Reset Mansioni
       resetTasksState();
       taskLogs = [];
       localStorage.setItem('hr_task_logs', JSON.stringify([]));
 
-      // 2. Reset Storico Ruota
       wheelHistory = [];
       localStorage.setItem('hr_wheel_history', JSON.stringify([]));
 
-      // 3. Reset Merce Spuntata
       goods = goods.filter(g => !g.checked);
       localStorage.setItem('hr_goods', JSON.stringify(goods));
       
-      // 4. Reset Log Merce
       goodsLogs = [];
       localStorage.setItem('hr_goods_logs', JSON.stringify([]));
 
@@ -877,21 +873,26 @@
     }
   }
 
+  // Calcolo Ritardo
+  function isLogLate(dateObj) {
+    if(shifts.length === 0) return false;
+    const currentMin = dateObj.getHours() * 60 + dateObj.getMinutes();
+    
+    // Trova il turno più vicino o la tolleranza
+    return shifts.every(s => {
+      const [h, m] = s.start.split(':').map(Number);
+      const shiftStartMin = h * 60 + m + parseInt(s.tolerance);
+      return currentMin > shiftStartMin;
+    });
+  }
+
   function createClockInRecord(emp, dateObj, todayStr) {
     let autoOutTimeStr = "15:00";
     if (dateObj.getHours() >= 15) {
       autoOutTimeStr = "23:00";
     }
 
-    let isLate = false;
-    if(shifts.length > 0) {
-      const currentMin = dateObj.getHours() * 60 + dateObj.getMinutes();
-      isLate = shifts.every(s => {
-        const [h, m] = s.start.split(':').map(Number);
-        const shiftStartMin = h * 60 + m + parseInt(s.tolerance);
-        return currentMin > shiftStartMin;
-      });
-    }
+    const isLate = isLogLate(dateObj);
 
     const log = {
       id: Date.now(),
@@ -961,22 +962,16 @@
           autoOutTimeStr = "23:00";
         }
 
-        let isLate = false;
-        if(shifts.length > 0) {
-          const currentMin = h * 60 + m;
-          isLate = shifts.every(s => {
-            const [sh, sm] = s.start.split(':').map(Number);
-            const shiftStartMin = sh * 60 + sm + parseInt(s.tolerance);
-            return currentMin > shiftStartMin;
-          });
-        }
+        const dateDummy = new Date();
+        dateDummy.setHours(h, m, 0, 0);
+        const isLate = isLogLate(dateDummy);
 
         clockLogs[logIndex].inTime = newTimeVal;
         clockLogs[logIndex].outTime = autoOutTimeStr;
         clockLogs[logIndex].status = isLate ? 'late' : 'present';
 
         localStorage.setItem('hr_logs', JSON.stringify(clockLogs));
-        alert(`Orario aggiornato a ${newTimeVal}. Uscita fissa prevista per le ${autoOutTimeStr}.`);
+        alert(`Orario aggiornato a ${newTimeVal}. Stato: ${isLate ? 'IN RITARDO (Rosso)' : 'IN ORARIO (Verde)'}. Uscita fissa: ${autoOutTimeStr}.`);
       }
     }
 
@@ -1614,7 +1609,7 @@
       const icon = empIconMap[e.id] ? ` ${empIconMap[e.id]}` : '';
 
       if(activeLog) {
-        statusClass = activeLog.status;
+        statusClass = activeLog.status; // 'present' (Verde) o 'late' (Rosso)
         const displayTime = activeLog.inTime || activeLog.time || '--:--';
         statusText = (activeLog.status === 'present' ? 'Presente' : 'In Ritardo') + ' (' + displayTime + ')';
       }
