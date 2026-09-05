@@ -193,7 +193,7 @@
       <button class="tab-btn" onclick="switchTab('mansioni')">Mansioni</button>
       <button class="tab-btn" onclick="switchTab('merce')">Merce</button>
       <button class="tab-btn" onclick="switchTab('ruota')">Ruota</button>
-      <button class="tab-btn" onclick="switchTab('riepilogo')">Riepilogo Mensile</button>
+      <button class="tab-btn" onclick="switchTab('riepilogo')">Riepilogo Presenze</button>
       <button class="tab-btn" onclick="requestAdminAccess('dipendenti')">Anagrafica Dipendenti 🔒</button>
       <button class="tab-btn" onclick="requestAdminAccess('presenze')">Registro Calendario 🔒</button>
       <button class="tab-btn" onclick="requestAdminAccess('turni')">Orari e Turni 🔒</button>
@@ -341,20 +341,31 @@
     </div>
   </div>
 
-  <!-- TAB RIEPILOGO MENSILE -->
+  <!-- TAB RIEPILOGO PRESENZE (SETTIMANA / MESE) -->
   <div id="tab-riepilogo" class="tab-content">
     <div class="card">
-      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
         <div>
-          <h2>📊 Riepilogo Mensile Presenze</h2>
-          <p style="color: #64748b; font-size: 0.85rem; margin-top: 2px;">Conteggio cumulativo dal 1° del mese fino al giorno selezionato/corrente.</p>
+          <h2>📊 Riepilogo Presenze</h2>
+          <p style="color: #64748b; font-size: 0.85rem; margin-top: 2px;">Conteggio presenze, ritardi ed assenze con filtri di ordinamento.</p>
         </div>
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <label style="font-weight: bold; font-size: 0.9rem;">Periodo:</label>
-          <select id="monthly-summary-period" onchange="renderMonthlySummary()" style="padding: 8px 12px;">
-            <option value="current">Mese Corrente</option>
-            <option value="previous">Mese Scorso</option>
-          </select>
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+          <label style="font-weight: bold; font-size: 0.9rem; display: flex; align-items: center; gap: 6px;">
+            Periodo:
+            <select id="summary-period" onchange="renderMonthlySummary()" style="padding: 8px 12px;">
+              <option value="week">Settimana Corrente</option>
+              <option value="current">Mese Corrente</option>
+            </select>
+          </label>
+
+          <label style="font-weight: bold; font-size: 0.9rem; display: flex; align-items: center; gap: 6px;">
+            Ordina per:
+            <select id="summary-sort" onchange="renderMonthlySummary()" style="padding: 8px 12px;">
+              <option value="puntuale">Più puntuali → Meno puntuali</option>
+              <option value="ritardi">Più ritardi → Meno ritardi</option>
+              <option value="assenze">Più assenze → Meno assenze</option>
+            </select>
+          </label>
         </div>
       </div>
       
@@ -578,7 +589,7 @@
 
 <script>
   // APP VERSION CONSTANT
-  const APP_VERSION = 'v8';
+  const APP_VERSION = 'v9';
 
   // State Initialization
   let adminPin = localStorage.getItem('hr_pin') || '0104';
@@ -1374,44 +1385,55 @@
     }
   }
 
-  // --- SEZIONE RIEPILOGO MENSILE ---
+  // --- SEZIONE RIEPILOGO PRESENZE (SETTIMANALE / MENSILE + FILTRI ORDINAMENTO) ---
   function renderMonthlySummary() {
-    const period = document.getElementById('monthly-summary-period').value;
+    const period = document.getElementById('summary-period').value;
+    const sortCriteria = document.getElementById('summary-sort').value;
     const now = new Date();
     
-    let targetYear = now.getFullYear();
-    let targetMonth = now.getMonth();
+    let datesToProcess = [];
 
-    if (period === 'previous') {
-      targetMonth -= 1;
-      if (targetMonth < 0) {
-        targetMonth = 11;
-        targetYear -= 1;
+    if (period === 'week') {
+      const currentDayOfWeek = now.getDay();
+      const distanceToMonday = currentDayOfWeek === 0 ? 6 : currentDayOfWeek - 1;
+      
+      const monday = new Date(now);
+      monday.setDate(now.getDate() - distanceToMonday);
+
+      const tempDate = new Date(monday);
+      while (tempDate <= now) {
+        const y = tempDate.getFullYear();
+        const m = String(tempDate.getMonth() + 1).padStart(2, '0');
+        const d = String(tempDate.getDate()).padStart(2, '0');
+        datesToProcess.push(`${y}-${m}-${d}`);
+        
+        tempDate.setDate(tempDate.getDate() + 1);
+      }
+    } else if (period === 'current') {
+      const targetYear = now.getFullYear();
+      const targetMonth = now.getMonth();
+      const maxDay = now.getDate();
+
+      for (let day = 1; day <= maxDay; day++) {
+        const dateStr = `${targetYear}-${String(targetMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        datesToProcess.push(dateStr);
       }
     }
 
-    const daysInTargetMonth = new Date(targetYear, targetMonth + 1, 0).getDate();
-    let maxDay = daysInTargetMonth;
-
-    if (period === 'current') {
-      maxDay = now.getDate();
-    }
-
-    const sortedEmployees = [...employees].sort((a, b) => a.name.localeCompare(b.name, 'it', { sensitivity: 'base' }));
     const container = document.getElementById('table-monthly-summary');
 
-    if (sortedEmployees.length === 0) {
+    if (employees.length === 0) {
       container.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#94a3b8;">Nessun dipendente registrato.</td></tr>';
       return;
     }
 
-    container.innerHTML = sortedEmployees.map(emp => {
+    // Calcolo delle metriche per ciascun dipendente
+    const employeeStats = employees.map(emp => {
       let onTimeDays = 0;
       let lateDays = 0;
       let absentDays = 0;
 
-      for (let day = 1; day <= maxDay; day++) {
-        const dateStr = `${targetYear}-${String(targetMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      datesToProcess.forEach(dateStr => {
         const dayLogs = clockLogs.filter(l => l.empId === emp.id && l.date === dateStr);
 
         if (dayLogs.length === 0) {
@@ -1424,17 +1446,42 @@
             onTimeDays++;
           }
         }
-      }
+      });
 
-      return `
-        <tr>
-          <td><strong>${emp.name}</strong></td>
-          <td style="color: var(--present); font-weight: bold;">${onTimeDays} gg</td>
-          <td style="color: var(--late); font-weight: bold;">${lateDays} gg</td>
-          <td style="color: var(--absent); font-weight: bold;">${absentDays} gg</td>
-        </tr>
-      `;
-    }).join('');
+      return {
+        emp,
+        onTimeDays,
+        lateDays,
+        absentDays
+      };
+    });
+
+    // Ordinamento in base al criterio selezionato
+    employeeStats.sort((a, b) => {
+      if (sortCriteria === 'puntuale') {
+        // Dal più puntuale al meno puntuale (Decrescente per presenze puntuali)
+        if (b.onTimeDays !== a.onTimeDays) return b.onTimeDays - a.onTimeDays;
+        return a.lateDays - b.lateDays; // In caso di parità, meno ritardi prima
+      } else if (sortCriteria === 'ritardi') {
+        // Da chi ha fatto più ritardi a chi ha fatto meno ritardi (Decrescente per ritardi)
+        if (b.lateDays !== a.lateDays) return b.lateDays - a.lateDays;
+        return b.absentDays - a.absentDays;
+      } else if (sortCriteria === 'assenze') {
+        // Da chi ha fatto più assenze a chi ha fatto meno assenze (Decrescente per assenze)
+        if (b.absentDays !== a.absentDays) return b.absentDays - a.absentDays;
+        return b.lateDays - a.lateDays;
+      }
+      return 0;
+    });
+
+    container.innerHTML = employeeStats.map(item => `
+      <tr>
+        <td><strong>${item.emp.name}</strong></td>
+        <td style="color: var(--present); font-weight: bold;">${item.onTimeDays} gg</td>
+        <td style="color: var(--late); font-weight: bold;">${item.lateDays} gg</td>
+        <td style="color: var(--absent); font-weight: bold;">${item.absentDays} gg</td>
+      </tr>
+    `).join('');
   }
 
   // Modifica PIN
