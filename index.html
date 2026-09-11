@@ -205,7 +205,7 @@
     <button class="theme-toggle-btn" onclick="toggleDarkMode()">
       <span id="theme-btn-icon">🌙</span> <span id="theme-btn-text">Tema Scuro</span>
     </button>
-    <div class="app-version-tag" id="app-version-display">Versione: v8</div>
+    <div class="app-version-tag" id="app-version-display">Versione: v11</div>
   </div>
 </sidebar>
 
@@ -589,7 +589,7 @@
 
 <script>
   // APP VERSION CONSTANT
-  const APP_VERSION = 'v9';
+  const APP_VERSION = 'v11';
 
   // State Initialization
   let adminPin = localStorage.getItem('hr_pin') || '0104';
@@ -899,16 +899,32 @@
     }
   }
 
-  // Calcolo Ritardo
+  // Calcolo Ritardo corretto per gestire più turni (es. Turno Mattina / Turno Pomeridiano)
   function isLogLate(dateObj) {
     if(shifts.length === 0) return false;
     const currentMin = dateObj.getHours() * 60 + dateObj.getMinutes();
     
-    return shifts.every(s => {
-      const [h, m] = s.start.split(':').map(Number);
-      const shiftStartMin = h * 60 + m + parseInt(s.tolerance);
-      return currentMin > shiftStartMin;
+    // Ordiniamo i turni per orario di inizio
+    const sortedShifts = [...shifts].sort((a, b) => {
+      const [h1, m1] = a.start.split(':').map(Number);
+      const [h2, m2] = b.start.split(':').map(Number);
+      return (h1 * 60 + m1) - (h2 * 60 + m2);
     });
+
+    // Troviamo il turno di competenza più vicino all'orario attuale (o l'ultimo utile)
+    let targetShift = sortedShifts[0];
+    for (let s of sortedShifts) {
+      const [h, m] = s.start.split(':').map(Number);
+      const shiftStartMin = h * 60 + m;
+      if (currentMin >= (shiftStartMin - 120)) {
+        targetShift = s;
+      }
+    }
+
+    const [h, m] = targetShift.start.split(':').map(Number);
+    const shiftStartMin = h * 60 + m + parseInt(targetShift.tolerance || 10);
+    
+    return currentMin > shiftStartMin;
   }
 
   function createClockInRecord(emp, dateObj, todayStr) {
