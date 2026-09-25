@@ -29,6 +29,11 @@ self.addEventListener('activate', (event) => {
 
 // Intercettazione richieste di rete (Offline First)
 self.addEventListener('fetch', (event) => {
+  // Ignora le richieste verso Supabase per evitare interferenze con il database
+  if (event.request.url.includes('supabase.co')) {
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       return cachedResponse || fetch(event.request).catch(() => {

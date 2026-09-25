@@ -10,6 +10,9 @@
   <meta name="theme-color" content="#2563eb">
   <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/912/912318.png">
 
+  <!-- SDK SUPABASE -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <style>
     :root {
       --primary: #2563eb;
@@ -588,6 +591,11 @@
 </div>
 
 <script>
+  // CONFIGURAZIONE SUPABASE (Usiamo supabaseClient per evitare conflitti globali)
+  const SUPABASE_URL = 'https://jxqyqwrlnyxcxgzkizqy.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4cXlxd3Jsbnl4Y3hnemtpenF5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg2MjM5NzMsImV4cCI6MjEwNDE5OTk3M30.IUifS9i0ZSFyhVug3WJa9sKNf_GY8UM8LWOmyRHH1tI';
+  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
   // APP VERSION CONSTANT
   const APP_VERSION = 'v11';
 
@@ -883,7 +891,7 @@
     targetEmpForClockInId = null;
   }
 
-  function executeConfirmedClockIn() {
+  async function executeConfirmedClockIn() {
     if(!targetEmpForClockInId) return;
 
     const emp = employees.find(e => e.id === targetEmpForClockInId);
@@ -892,6 +900,23 @@
 
     if(emp) {
       const isLate = createClockInRecord(emp, now, todayStr);
+
+      // Invio dei dati a Supabase
+      try {
+        const { error } = await supabaseClient
+          .from('time_clocks')
+          .insert([
+            { 
+              employee_name: emp.name, 
+              clock_in: now.toISOString(), 
+              status: isLate ? 'late' : 'present'
+            }
+          ]);
+        if (error) console.error('Errore Supabase:', error.message);
+      } catch (err) {
+        console.error('Eccezione Supabase:', err);
+      }
+
       playClockInBeep(isLate);
       closeConfirmClockModal();
       startCooldown();
