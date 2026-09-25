@@ -131,15 +131,15 @@
     button:hover { opacity: 0.95; }
     button:disabled { background: #cbd5e1; cursor: not-allowed; }
 
-    /* GRIGLIA KIOSK */
-    .emp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; margin-top: 15px; }
-    .emp-card { padding: 20px; border-radius: 12px; text-align: center; color: white; cursor: pointer; user-select: none; transition: transform 0.1s; display: flex; flex-direction: column; justify-content: space-between; min-height: 130px; }
-    .emp-card:active { transform: scale(0.98); }
+    /* GRIGLIA KIOSK OTTIMIZZATA SMARTPHONE */
+    .emp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; margin-top: 15px; }
+    .emp-card { padding: 18px 12px; border-radius: 12px; text-align: center; color: white; cursor: pointer; user-select: none; transition: transform 0.1s; display: flex; flex-direction: column; justify-content: space-between; min-height: 120px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .emp-card:active { transform: scale(0.97); }
     .emp-card.absent { background-color: var(--absent) !important; }
     .emp-card.present { background-color: var(--present) !important; }
     .emp-card.late { background-color: var(--late) !important; }
-    .emp-card .name { font-size: 1.1rem; font-weight: bold; margin-bottom: 6px; }
-    .emp-card .status-time { font-size: 0.85rem; opacity: 0.95; }
+    .emp-card .name { font-size: 1.05rem; font-weight: bold; margin-bottom: 6px; word-break: break-word; }
+    .emp-card .status-time { font-size: 0.82rem; opacity: 0.95; }
 
     /* COOLDOWN */
     #cooldown-banner { display: none; background: #fef3c7; color: #92400e; padding: 12px; border-radius: 6px; text-align: center; font-weight: bold; margin-bottom: 16px; }
@@ -177,7 +177,7 @@
 
     /* RUOTA */
     .wheel-container { display: flex; flex-direction: column; align-items: center; position: relative; }
-    #wheel-canvas { border-radius: 50%; box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+    #wheel-canvas { border-radius: 50%; box-shadow: 0 4px 10px rgba(0,0,0,0.15); max-width: 100%; height: auto; }
     .wheel-pointer { width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-top: 25px solid #ef4444; position: absolute; top: -10px; z-index: 10; }
 
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
@@ -197,10 +197,10 @@
       <button class="tab-btn" onclick="switchTab('merce')">Merce</button>
       <button class="tab-btn" onclick="switchTab('ruota')">Ruota</button>
       <button class="tab-btn" onclick="switchTab('riepilogo')">Riepilogo Presenze</button>
-      <button class="tab-btn" onclick="requestAdminAccess('dipendenti')">Anagrafica Dipendenti 🔒</button>
-      <button class="tab-btn" onclick="requestAdminAccess('presenze')">Registro Calendario 🔒</button>
-      <button class="tab-btn" onclick="requestAdminAccess('turni')">Orari e Turni 🔒</button>
-      <button class="tab-btn" onclick="requestAdminAccess('settings')">Impostazioni PIN 🔒</button>
+      <button class="tab-btn" onclick="switchTab('dipendenti')">Anagrafica Dipendenti</button>
+      <button class="tab-btn" onclick="switchTab('presenze')">Registro Calendario</button>
+      <button class="tab-btn" onclick="switchTab('turni')">Orari e Turni</button>
+      <button class="tab-btn" onclick="switchTab('settings')">Impostazioni & Backup</button>
     </div>
   </div>
 
@@ -228,25 +228,33 @@
   <div id="tab-kiosk" class="tab-content active">
     <div class="grid-kiosk">
       <div class="card">
-        <h2>Seleziona il tuo nome per effettuare il Clock In</h2>
-        <p style="color: #64748b; font-size: 0.9rem; margin-top: 4px;">Tocca il tuo riquadro per timbrare l'ingresso. Turno 1 (Uscita 15:00) | Turno 2 (Uscita 23:00).</p>
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
+          <div>
+            <h2>Seleziona il tuo nome per il Clock In</h2>
+            <p style="color: #64748b; font-size: 0.9rem; margin-top: 4px;">Tocca il tuo riquadro per timbrare l'ingresso. Turno 1 (Uscita 15:00) | Turno 2 (Uscita 23:00).</p>
+          </div>
+          <!-- PULSANTE PER TORNARE ALLA DASHBOARD / RIEPILOGO -->
+          <button onclick="switchTab('riepilogo')" style="background: #334155; padding: 8px 14px; font-size: 0.9rem; white-space: nowrap;">📊 Vai alla Dashboard</button>
+        </div>
         <div id="kiosk-grid" class="emp-grid"></div>
       </div>
 
       <div class="card">
         <h3>🏆 Classifica Ordine di Arrivo</h3>
         <p style="color: #64748b; font-size: 0.85rem; margin-bottom: 10px;">Aggiornata in tempo reale per il turno corrente.</p>
-        <table>
-          <thead>
-            <tr>
-              <th style="width: 50px;">#</th>
-              <th>Dipendente</th>
-              <th>Ora</th>
-              <th>Stato</th>
-            </tr>
-          </thead>
-          <tbody id="table-leaderboard"></tbody>
-        </table>
+        <div style="overflow-x: auto;">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 50px;">#</th>
+                <th>Dipendente</th>
+                <th>Ora</th>
+                <th>Stato</th>
+              </tr>
+            </thead>
+            <tbody id="table-leaderboard"></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
@@ -372,17 +380,19 @@
         </div>
       </div>
       
-      <table style="margin-top: 20px;">
-        <thead>
-          <tr>
-            <th>Dipendente</th>
-            <th style="color: var(--present);">Presenze Puntuali (gg)</th>
-            <th style="color: var(--late);">Presenze in Ritardo (gg)</th>
-            <th style="color: var(--absent);">Assenze (gg)</th>
-          </tr>
-        </thead>
-        <tbody id="table-monthly-summary"></tbody>
-      </table>
+      <div style="overflow-x: auto;">
+        <table style="margin-top: 20px;">
+          <thead>
+            <tr>
+              <th>Dipendente</th>
+              <th style="color: var(--present);">Presenze Puntuali (gg)</th>
+              <th style="color: var(--late);">Presenze in Ritardo (gg)</th>
+              <th style="color: var(--absent);">Assenze (gg)</th>
+            </tr>
+          </thead>
+          <tbody id="table-monthly-summary"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -400,12 +410,14 @@
       </div>
       <div class="card">
         <h3>Elenco Dipendenti</h3>
-        <table>
-          <thead>
-            <tr><th>Nome</th><th>Ruolo</th><th>Azione</th></tr>
-          </thead>
-          <tbody id="table-employees"></tbody>
-        </table>
+        <div style="overflow-x: auto;">
+          <table>
+            <thead>
+              <tr><th>Nome</th><th>Ruolo</th><th>Azione</th></tr>
+            </thead>
+            <tbody id="table-employees"></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
@@ -451,12 +463,14 @@
 
       <div class="card">
         <h3 id="selected-date-title">Presenze del giorno</h3>
-        <table>
-          <thead>
-            <tr><th>Ingresso</th><th>Uscita Fissa</th><th>Dipendente</th><th>Stato</th></tr>
-          </thead>
-          <tbody id="table-daily-logs"></tbody>
-        </table>
+        <div style="overflow-x: auto;">
+          <table>
+            <thead>
+              <tr><th>Ingresso</th><th>Uscita Fissa</th><th>Dipendente</th><th>Stato</th></tr>
+            </thead>
+            <tbody id="table-daily-logs"></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
@@ -476,17 +490,19 @@
       </div>
       <div class="card">
         <h3>Turni Configurati</h3>
-        <table>
-          <thead>
-            <tr><th>Nome</th><th>Inizio</th><th>Tolleranza</th><th>Anticipo Max</th><th>Azione</th></tr>
-          </thead>
-          <tbody id="table-shifts"></tbody>
-        </table>
+        <div style="overflow-x: auto;">
+          <table>
+            <thead>
+              <tr><th>Nome</th><th>Inizio</th><th>Tolleranza</th><th>Anticipo Max</th><th>Azione</th></tr>
+            </thead>
+            <tbody id="table-shifts"></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- TAB 7: IMPOSTAZIONI PIN & BACKUP -->
+  <!-- TAB 7: IMPOSTAZIONI & BACKUP -->
   <div id="tab-settings" class="tab-content">
     <div class="grid-2">
       <div class="card">
@@ -515,18 +531,6 @@
 </main>
 
 <!-- MODALI -->
-<div id="pin-modal" class="modal">
-  <div class="modal-content">
-    <h3>Accesso Riservato</h3>
-    <p style="margin: 10px 0; font-size: 0.9rem; color: #64748b;">Inserisci il PIN per accedere</p>
-    <input type="password" id="pin-input" style="width: 100%; text-align: center; font-size: 1.2rem;" placeholder="****">
-    <div style="display: flex; gap: 10px; margin-top: 16px;">
-      <button onclick="closePinModal()" style="flex:1; background: #94a3b8;">Annulla</button>
-      <button onclick="verifyPin()" style="flex:1;">Conferma</button>
-    </div>
-  </div>
-</div>
-
 <div id="confirm-clock-modal" class="modal">
   <div class="modal-content" style="max-width: 380px;">
     <h3>Conferma Clock In</h3>
@@ -543,28 +547,7 @@
     <h3>Clock In già effettuato</h3>
     <p id="already-clocked-msg" style="margin: 12px 0; font-size: 0.95rem; color: #64748b;"></p>
     <div style="display: flex; gap: 10px; margin-top: 16px;">
-      <button onclick="closeAlreadyClockedModal()" style="flex:1; background: #94a3b8;">OK</button>
-      <button onclick="requestEditClockIn()" style="flex:1;">Modifica Orario 🔒</button>
-    </div>
-  </div>
-</div>
-
-<div id="edit-clock-modal" class="modal">
-  <div class="modal-content" style="max-width: 400px;">
-    <h3>Gestione Timbratura</h3>
-    <p id="edit-clock-emp-name" style="margin: 8px 0; font-weight: bold; color: var(--primary);"></p>
-    <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 12px;">Modifica l'orario oppure cancella la timbratura per consentire un nuovo Clock In:</p>
-    
-    <div style="display: flex; justify-content: center; margin-bottom: 20px;">
-      <input type="time" id="edit-clock-time-input" style="font-size: 1.4rem; padding: 10px; text-align: center; width: 180px;" required>
-    </div>
-
-    <div style="display: flex; flex-direction: column; gap: 10px;">
-      <div style="display: flex; gap: 10px;">
-        <button onclick="closeEditClockModal()" style="flex:1; background: #94a3b8;">Esci</button>
-        <button onclick="saveClockInEdit()" style="flex:1; background: var(--present);">Salva Modifica</button>
-      </div>
-      <button onclick="cancelClockInRecord()" style="background: var(--late); width: 100%; padding: 12px;">❌ Annulla / Elimina Clock In</button>
+      <button onclick="closeAlreadyClockedModal()" style="flex:1; background: var(--present);">OK</button>
     </div>
   </div>
 </div>
@@ -591,15 +574,13 @@
 </div>
 
 <script>
-  // CONFIGURAZIONE SUPABASE (Usiamo supabaseClient per evitare conflitti globali)
+  // CONFIGURAZIONE SUPABASE
   const SUPABASE_URL = 'https://jxqyqwrlnyxcxgzkizqy.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4cXlxd3Jsbnl4Y3hnemtpenF5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg2MjM5NzMsImV4cCI6MjEwNDE5OTk3M30.IUifS9i0ZSFyhVug3WJa9sKNf_GY8UM8LWOmyRHH1tI';
   const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  // APP VERSION CONSTANT
   const APP_VERSION = 'v11';
 
-  // State Initialization
   let adminPin = localStorage.getItem('hr_pin') || '0104';
   let employees = JSON.parse(localStorage.getItem('hr_employees')) || [];
   let clockLogs = JSON.parse(localStorage.getItem('hr_logs')) || [];
@@ -617,50 +598,37 @@
   let lastShift23ResetDate = localStorage.getItem('hr_shift23_reset_date') || '';
 
   let wheelEmployees = JSON.parse(localStorage.getItem('hr_wheel_emps')) || [];
-
   let isDarkMode = localStorage.getItem('hr_dark_mode') === 'true';
 
-  let pendingTab = null;
   let isCooldown = false;
   let cooldownTimer = null;
   let currentCalDate = new Date();
   let selectedDateStr = new Date().toISOString().split('T')[0];
   let activeTaskId = null;
-  let targetEmpForEditId = null;
   let targetEmpForClockInId = null;
 
-  // Ruota state
   let wheelAngle = 0;
   let isSpinning = false;
   const wheelColors = ['#2563eb', '#16a34a', '#dc2626', '#d97706', '#9333ea', '#0891b2', '#e11d48', '#4d7c0f'];
 
-  // SUONI FEEDBACK DIFFERENZIATI
+  // SUONI FEEDBACK
   function playClockInBeep(isLate) {
     try {
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      
       if (!isLate) {
         const osc1 = audioCtx.createOscillator();
         const osc2 = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
 
-        osc1.type = 'sine';
-        osc1.frequency.setValueAtTime(523.25, audioCtx.currentTime);
-        osc2.type = 'sine';
-        osc2.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1);
+        osc1.type = 'sine'; osc1.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+        osc2.type = 'sine'; osc2.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1);
 
         gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
 
-        osc1.connect(gain);
-        osc2.connect(gain);
-        gain.connect(audioCtx.destination);
-
-        osc1.start(audioCtx.currentTime);
-        osc1.stop(audioCtx.currentTime + 0.1);
-        osc2.start(audioCtx.currentTime + 0.1);
-        osc2.stop(audioCtx.currentTime + 0.3);
-
+        osc1.connect(gain); osc2.connect(gain); gain.connect(audioCtx.destination);
+        osc1.start(audioCtx.currentTime); osc1.stop(audioCtx.currentTime + 0.1);
+        osc2.start(audioCtx.currentTime + 0.1); osc2.stop(audioCtx.currentTime + 0.3);
       } else {
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
@@ -672,15 +640,10 @@
         gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
 
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-
-        osc.start(audioCtx.currentTime);
-        osc.stop(audioCtx.currentTime + 0.4);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + 0.4);
       }
-    } catch(e) {
-      console.log('Audio non supportato o bloccato');
-    }
+    } catch(e) {}
   }
 
   // TEMA SCURO
@@ -702,16 +665,11 @@
     initDarkMode();
   }
 
-  // Funzione Reset Stato Mansioni
   function resetTasksState() {
-    tasks.forEach(t => {
-      t.done = false;
-      t.assignees = [];
-    });
+    tasks.forEach(t => { t.done = false; t.assignees = []; });
     localStorage.setItem('hr_tasks_v2', JSON.stringify(tasks));
   }
 
-  // Clock & Controllo Reset Automatizzato (alle 15:00 e alle 23:00)
   setInterval(() => {
     const now = new Date();
     document.getElementById('current-clock').textContent = now.toLocaleDateString('it-IT') + ' ' + now.toLocaleTimeString('it-IT');
@@ -722,41 +680,28 @@
     const todayStr = now.toISOString().split('T')[0];
     const hour = now.getHours();
 
-    // RESET TURNO 1 (ORE 15:00)
     if (hour >= 15 && hour < 23 && lastShift15ResetDate !== todayStr) {
       resetTasksState();
-      
       const nowTime = now.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-      taskLogs.unshift({ time: nowTime, msg: `🔄 Cambio Turno (15:00): Mansioni resettate per il turno pomeridiano/serale.` });
+      taskLogs.unshift({ time: nowTime, msg: `🔄 Cambio Turno (15:00): Mansioni resettate.` });
       localStorage.setItem('hr_task_logs', JSON.stringify(taskLogs));
-
       lastShift15ResetDate = todayStr;
       localStorage.setItem('hr_shift15_reset_date', todayStr);
       renderAll();
     }
 
-    // RESET TURNO 2 (ORE 23:00)
     if (hour >= 23 && lastShift23ResetDate !== todayStr) {
       resetTasksState();
-      taskLogs = [];
-      localStorage.setItem('hr_task_logs', JSON.stringify([]));
-
-      wheelHistory = [];
-      localStorage.setItem('hr_wheel_history', JSON.stringify([]));
-
-      goods = goods.filter(g => !g.checked);
-      localStorage.setItem('hr_goods', JSON.stringify(goods));
-      
-      goodsLogs = [];
-      localStorage.setItem('hr_goods_logs', JSON.stringify([]));
-
+      taskLogs = []; localStorage.setItem('hr_task_logs', JSON.stringify([]));
+      wheelHistory = []; localStorage.setItem('hr_wheel_history', JSON.stringify([]));
+      goods = goods.filter(g => !g.checked); localStorage.setItem('hr_goods', JSON.stringify(goods));
+      goodsLogs = []; localStorage.setItem('hr_goods_logs', JSON.stringify([]));
       lastShift23ResetDate = todayStr;
       localStorage.setItem('hr_shift23_reset_date', todayStr);
       renderAll();
     }
   }
 
-  // Navigation
   function switchTab(tabId) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -764,36 +709,13 @@
     const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick')?.includes(`'${tabId}'`));
     if(btn) {
       btn.classList.add('active');
-      document.getElementById('page-title').textContent = btn.textContent.replace('🔒', '').trim();
+      document.getElementById('page-title').textContent = btn.textContent.trim();
     }
-    document.getElementById(`tab-${tabId}`).classList.add('active');
+    const tabEl = document.getElementById(`tab-${tabId}`);
+    if(tabEl) tabEl.classList.add('active');
 
     renderAll();
   }
-
-  function requestAdminAccess(tabId) {
-    pendingTab = tabId;
-    document.getElementById('pin-input').value = '';
-    document.getElementById('pin-modal').style.display = 'flex';
-  }
-
-  function closePinModal() {
-    document.getElementById('pin-modal').style.display = 'none';
-    pendingTab = null;
-  }
-
-  function defaultVerifyPin() {
-    const input = document.getElementById('pin-input').value;
-    if(input === adminPin) {
-      const target = pendingTab;
-      closePinModal();
-      switchTab(target);
-    } else {
-      alert('PIN Errato!');
-    }
-  }
-
-  let verifyPin = defaultVerifyPin;
 
   // Employee CRUD
   function saveEmployee(e) {
@@ -815,7 +737,6 @@
     renderAll();
   }
 
-  // Helper Log Attivi Turno
   function getCurrentShiftLog(empId) {
     const now = new Date();
     const todayStr = now.toISOString().split('T')[0];
@@ -827,19 +748,16 @@
     if(currentHour >= 15 && currentHour < 23) {
       return todayLogs.find(l => {
         const timeStr = l.inTime || l.time || '00:00';
-        const h = parseInt(timeStr.split(':')[0]);
-        return h >= 15;
+        return parseInt(timeStr.split(':')[0]) >= 15;
       }) || null;
     }
     
     if(currentHour < 15) {
       return todayLogs.find(l => {
         const timeStr = l.inTime || l.time || '00:00';
-        const h = parseInt(timeStr.split(':')[0]);
-        return h < 15;
+        return parseInt(timeStr.split(':')[0]) < 15;
       }) || null;
     }
-
     return null;
   }
 
@@ -853,34 +771,14 @@
     const activeLog = getCurrentShiftLog(empId);
 
     if(activeLog) {
-      targetEmpForEditId = empId;
       const displayTime = activeLog.inTime || activeLog.time || '--:--';
       document.getElementById('already-clocked-msg').textContent = `${emp.name} ha già effettuato il Clock In per questo turno alle ore ${displayTime}.`;
       document.getElementById('already-clocked-modal').style.display = 'flex';
       return;
     }
 
-    const now = new Date();
-    if(shifts.length > 0) {
-      const currentMin = now.getHours() * 60 + now.getMinutes();
-      
-      const isTooEarly = shifts.every(s => {
-        const [h, m] = s.start.split(':').map(Number);
-        const shiftStartMin = h * 60 + m;
-        const maxEarlyMin = parseInt(s.early || 10);
-        const earliestAllowedMin = shiftStartMin - maxEarlyMin;
-
-        return currentMin < earliestAllowedMin;
-      });
-
-      if(isTooEarly) {
-        const firstShift = shifts[0];
-        alert(`Clock In non consentito. È possibile timbrare al massimo ${firstShift.early || 10} minuti prima del turno.`);
-        return;
-      }
-    }
-
     targetEmpForClockInId = empId;
+    const now = new Date();
     const timeStr = now.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
     document.getElementById('confirm-clock-msg').innerHTML = `Confermi il Clock In per <strong>${emp.name}</strong> alle ore <strong>${timeStr}</strong>?`;
     document.getElementById('confirm-clock-modal').style.display = 'flex';
@@ -901,21 +799,11 @@
     if(emp) {
       const isLate = createClockInRecord(emp, now, todayStr);
 
-      // Invio dei dati a Supabase
       try {
-        const { error } = await supabaseClient
+        await supabaseClient
           .from('time_clocks')
-          .insert([
-            { 
-              employee_name: emp.name, 
-              clock_in: now.toISOString(), 
-              status: isLate ? 'late' : 'present'
-            }
-          ]);
-        if (error) console.error('Errore Supabase:', error.message);
-      } catch (err) {
-        console.error('Eccezione Supabase:', err);
-      }
+          .insert([{ employee_name: emp.name, clock_in: now.toISOString(), status: isLate ? 'late' : 'present' }]);
+      } catch (err) {}
 
       playClockInBeep(isLate);
       closeConfirmClockModal();
@@ -924,40 +812,27 @@
     }
   }
 
-  // Calcolo Ritardo corretto per gestire più turni (es. Turno Mattina / Turno Pomeridiano)
   function isLogLate(dateObj) {
     if(shifts.length === 0) return false;
     const currentMin = dateObj.getHours() * 60 + dateObj.getMinutes();
-    
-    // Ordiniamo i turni per orario di inizio
     const sortedShifts = [...shifts].sort((a, b) => {
       const [h1, m1] = a.start.split(':').map(Number);
       const [h2, m2] = b.start.split(':').map(Number);
       return (h1 * 60 + m1) - (h2 * 60 + m2);
     });
 
-    // Troviamo il turno di competenza più vicino all'orario attuale (o l'ultimo utile)
     let targetShift = sortedShifts[0];
     for (let s of sortedShifts) {
       const [h, m] = s.start.split(':').map(Number);
-      const shiftStartMin = h * 60 + m;
-      if (currentMin >= (shiftStartMin - 120)) {
-        targetShift = s;
-      }
+      if (currentMin >= ((h * 60 + m) - 120)) targetShift = s;
     }
 
     const [h, m] = targetShift.start.split(':').map(Number);
-    const shiftStartMin = h * 60 + m + parseInt(targetShift.tolerance || 10);
-    
-    return currentMin > shiftStartMin;
+    return currentMin > (h * 60 + m + parseInt(targetShift.tolerance || 10));
   }
 
   function createClockInRecord(emp, dateObj, todayStr) {
-    let autoOutTimeStr = "15:00";
-    if (dateObj.getHours() >= 15) {
-      autoOutTimeStr = "23:00";
-    }
-
+    let autoOutTimeStr = dateObj.getHours() >= 15 ? "23:00" : "15:00";
     const isLate = isLogLate(dateObj);
 
     const log = {
@@ -977,85 +852,6 @@
 
   function closeAlreadyClockedModal() {
     document.getElementById('already-clocked-modal').style.display = 'none';
-  }
-
-  function requestEditClockIn() {
-    closeAlreadyClockedModal();
-    document.getElementById('pin-input').value = '';
-    
-    verifyPin = function() {
-      const input = document.getElementById('pin-input').value;
-      if(input === adminPin) {
-        closePinModal();
-        openEditClockModal();
-      } else {
-        alert('PIN Errato!');
-      }
-      verifyPin = defaultVerifyPin;
-    };
-
-    document.getElementById('pin-modal').style.display = 'flex';
-  }
-
-  function openEditClockModal() {
-    const emp = employees.find(e => e.id === targetEmpForEditId);
-    const activeLog = getCurrentShiftLog(targetEmpForEditId);
-
-    document.getElementById('edit-clock-emp-name').textContent = `Dipendente: ${emp.name}`;
-    const currentInTime = activeLog ? (activeLog.inTime || activeLog.time || "08:00") : "08:00";
-    document.getElementById('edit-clock-time-input').value = currentInTime;
-    document.getElementById('edit-clock-modal').style.display = 'flex';
-  }
-
-  function closeEditClockModal() {
-    document.getElementById('edit-clock-modal').style.display = 'none';
-    targetEmpForEditId = null;
-  }
-
-  function saveClockInEdit() {
-    const newTimeVal = document.getElementById('edit-clock-time-input').value;
-    if(!newTimeVal) return alert('Inserisci un orario valido!');
-
-    const activeLog = getCurrentShiftLog(targetEmpForEditId);
-
-    if(activeLog) {
-      const logIndex = clockLogs.findIndex(l => l.id === activeLog.id);
-      if(logIndex !== -1) {
-        const [h, m] = newTimeVal.split(':').map(Number);
-        
-        let autoOutTimeStr = "15:00";
-        if (h >= 15) {
-          autoOutTimeStr = "23:00";
-        }
-
-        const dateDummy = new Date();
-        dateDummy.setHours(h, m, 0, 0);
-        const isLate = isLogLate(dateDummy);
-
-        clockLogs[logIndex].inTime = newTimeVal;
-        clockLogs[logIndex].outTime = autoOutTimeStr;
-        clockLogs[logIndex].status = isLate ? 'late' : 'present';
-
-        localStorage.setItem('hr_logs', JSON.stringify(clockLogs));
-        alert(`Orario aggiornato a ${newTimeVal}. Stato: ${isLate ? 'IN RITARDO (Rosso)' : 'IN ORARIO (Verde)'}. Uscita fissa: ${autoOutTimeStr}.`);
-      }
-    }
-
-    closeEditClockModal();
-    renderAll();
-  }
-
-  function cancelClockInRecord() {
-    const activeLog = getCurrentShiftLog(targetEmpForEditId);
-    if (!activeLog) return;
-
-    if (confirm("Sei sicuro di voler ANNULLARE il Clock In di questo dipendente? Il riquadro tornerà grigio (Assente).")) {
-      clockLogs = clockLogs.filter(l => l.id !== activeLog.id);
-      localStorage.setItem('hr_logs', JSON.stringify(clockLogs));
-      alert("Timbratura annullata con successo!");
-      closeEditClockModal();
-      renderAll();
-    }
   }
 
   function startCooldown() {
@@ -1107,12 +903,11 @@
     const titleInput = document.getElementById('new-task-title');
     const newTitle = titleInput.value.trim();
 
-    const newTask = { id: Date.now(), title: newTitle, assignees: [], done: false };
-    tasks.push(newTask);
+    tasks.push({ id: Date.now(), title: newTitle, assignees: [], done: false });
     localStorage.setItem('hr_tasks_v2', JSON.stringify(tasks));
 
     const now = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-    taskLogs.unshift({ time: now, msg: `Nuova mansione creata: "${newTitle}"` });
+    taskLogs.unshift({ time: now, msg: `Nuova mansione: "${newTitle}"` });
     localStorage.setItem('hr_task_logs', JSON.stringify(taskLogs));
 
     titleInput.value = '';
@@ -1122,17 +917,10 @@
   function deleteTask(taskId, event) {
     event.stopPropagation();
     const task = tasks.find(t => t.id === taskId);
-    if(!task) return;
-
-    if(!confirm(`Eliminare la mansione "${task.title}"?`)) return;
+    if(!task || !confirm(`Eliminare la mansione "${task.title}"?`)) return;
 
     tasks = tasks.filter(t => t.id !== taskId);
     localStorage.setItem('hr_tasks_v2', JSON.stringify(tasks));
-
-    const now = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-    taskLogs.unshift({ time: now, msg: `Mansione eliminata: "${task.title}"` });
-    localStorage.setItem('hr_task_logs', JSON.stringify(taskLogs));
-
     renderAll();
   }
 
@@ -1142,9 +930,7 @@
     if(!task) return;
 
     document.getElementById('modal-task-title').textContent = task.title;
-    const container = document.getElementById('modal-emp-checklist');
-
-    container.innerHTML = employees.map(e => `
+    document.getElementById('modal-emp-checklist').innerHTML = employees.map(e => `
       <label style="display:flex; align-items:center; gap:8px; background:var(--table-header); padding:8px; border-radius:4px; cursor:pointer;">
         <input type="checkbox" value="${e.name}" ${task.assignees.includes(e.name) ? 'checked' : ''}>
         <span>${e.name} (${e.role})</span>
@@ -1164,18 +950,14 @@
     if(!task) return;
 
     const selected = Array.from(document.querySelectorAll('#modal-emp-checklist input:checked')).map(i => i.value);
-    
-    if(selected.length === 0) {
-      alert('Seleziona almeno un dipendente o clicca su "Non Svolta".');
-      return;
-    }
+    if(selected.length === 0) return alert('Seleziona almeno un dipendente.');
 
     task.assignees = selected;
     task.done = true;
     localStorage.setItem('hr_tasks_v2', JSON.stringify(tasks));
 
     const now = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-    taskLogs.unshift({ time: now, msg: `Mansione "${task.title}" completata da: ${selected.join(', ')}` });
+    taskLogs.unshift({ time: now, msg: `"${task.title}" completata da: ${selected.join(', ')}` });
     localStorage.setItem('hr_task_logs', JSON.stringify(taskLogs));
 
     closeTaskModal();
@@ -1186,38 +968,21 @@
     const task = tasks.find(t => t.id === activeTaskId);
     if(!task) return;
 
-    task.assignees = [];
-    task.done = false;
+    task.assignees = []; task.done = false;
     localStorage.setItem('hr_tasks_v2', JSON.stringify(tasks));
-
-    const now = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-    taskLogs.unshift({ time: now, msg: `Mansione "${task.title}" segnata come NON svolta.` });
-    localStorage.setItem('hr_task_logs', JSON.stringify(taskLogs));
-
     closeTaskModal();
     renderAll();
   }
 
   function openEmpTasksSummaryModal(empName) {
     document.getElementById('summary-emp-name').textContent = `Mansioni di ${empName}`;
-    const container = document.getElementById('summary-tasks-list');
-    
     const userDoneTasks = tasks.filter(t => t.done && t.assignees.includes(empName));
     
-    if(userDoneTasks.length === 0) {
-      container.innerHTML = '<p style="color:#94a3b8; font-size:0.9rem;">Nessuna mansione completata al momento.</p>';
-    } else {
-      container.innerHTML = userDoneTasks.map(t => {
-        const log = taskLogs.find(l => l.msg.includes(`"${t.title}"`) && l.msg.includes(empName));
-        const timeStr = log ? log.time : 'In giornata';
-        return `
-          <div style="padding:10px; background:var(--table-header); border:1px solid var(--border); border-radius:6px; margin-bottom:8px;">
-            <div style="font-weight:bold; color:var(--text);">${t.title}</div>
-            <div style="font-size:0.8rem; color:#64748b; margin-top:2px;">Completata alle ore: ${timeStr}</div>
-          </div>
-        `;
-      }).join('');
-    }
+    document.getElementById('summary-tasks-list').innerHTML = userDoneTasks.length ? userDoneTasks.map(t => `
+      <div style="padding:10px; background:var(--table-header); border:1px solid var(--border); border-radius:6px; margin-bottom:8px;">
+        <div style="font-weight:bold;">${t.title}</div>
+      </div>
+    `).join('') : '<p style="color:#94a3b8; font-size:0.9rem;">Nessuna mansione completata.</p>';
 
     document.getElementById('emp-tasks-summary-modal').style.display = 'flex';
   }
@@ -1230,15 +995,8 @@
   function addGoodsItem(e) {
     e.preventDefault();
     const titleInput = document.getElementById('new-goods-title');
-    const title = titleInput.value.trim();
-
-    goods.push({ id: Date.now(), title, checked: false });
+    goods.push({ id: Date.now(), title: titleInput.value.trim(), checked: false });
     localStorage.setItem('hr_goods', JSON.stringify(goods));
-
-    const now = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-    goodsLogs.unshift({ time: now, msg: `Articolo aggiunto alla spesa: "${title}"` });
-    localStorage.setItem('hr_goods_logs', JSON.stringify(goodsLogs));
-
     titleInput.value = '';
     renderGoods();
   }
@@ -1246,65 +1004,38 @@
   function toggleGoodsItem(id) {
     const item = goods.find(g => g.id === id);
     if (!item) return;
-
     item.checked = !item.checked;
     localStorage.setItem('hr_goods', JSON.stringify(goods));
-
-    const now = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-    goodsLogs.unshift({ 
-      time: now, 
-      msg: item.checked ? `Articolo marcato come ACQUISTATO: "${item.title}"` : `Articolo DESELEZIONATO: "${item.title}"` 
-    });
-    localStorage.setItem('hr_goods_logs', JSON.stringify(goodsLogs));
-
     renderGoods();
   }
 
   function deleteGoodsItem(id, event) {
     event.stopPropagation();
-    const item = goods.find(g => g.id === id);
-    if (!item) return;
-
     goods = goods.filter(g => g.id !== id);
     localStorage.setItem('hr_goods', JSON.stringify(goods));
-
-    const now = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-    goodsLogs.unshift({ time: now, msg: `Articolo rimosso dalla lista: "${item.title}"` });
-    localStorage.setItem('hr_goods_logs', JSON.stringify(goodsLogs));
-
     renderGoods();
   }
 
   function renderGoods() {
-    const listContainer = document.getElementById('goods-list');
-    if(goods.length === 0) {
-      listContainer.innerHTML = '<p style="color:#94a3b8; font-size:0.9rem; text-align:center;">Nessun articolo da comprare.</p>';
-    } else {
-      listContainer.innerHTML = goods.map(g => `
-        <div class="goods-item ${g.checked ? 'checked' : ''}">
-          <label style="display:flex; align-items:center; gap:12px; cursor:pointer; flex:1;">
-            <input type="checkbox" ${g.checked ? 'checked' : ''} onchange="toggleGoodsItem(${g.id})" style="width:18px; height:18px;">
-            <span style="font-size:1rem; font-weight:600;">${g.title}</span>
-          </label>
-          <button onclick="deleteGoodsItem(${g.id}, event)" style="background:#ef4444; padding:6px 12px; font-size:0.8rem;">Elimina</button>
-        </div>
-      `).join('');
-    }
-
-    const chatContainer = document.getElementById('goods-chat');
-    chatContainer.innerHTML = goodsLogs.length ? goodsLogs.map(l => `
-      <div class="chat-msg">
-        <span class="time">[${l.time}]</span> ${l.msg}
+    document.getElementById('goods-list').innerHTML = goods.length ? goods.map(g => `
+      <div class="goods-item ${g.checked ? 'checked' : ''}">
+        <label style="display:flex; align-items:center; gap:12px; cursor:pointer; flex:1;">
+          <input type="checkbox" ${g.checked ? 'checked' : ''} onchange="toggleGoodsItem(${g.id})" style="width:18px; height:18px;">
+          <span style="font-size:1rem; font-weight:600;">${g.title}</span>
+        </label>
+        <button onclick="deleteGoodsItem(${g.id}, event)" style="background:#ef4444; padding:6px 12px; font-size:0.8rem;">Elimina</button>
       </div>
-    `).join('') : '<div style="color:#94a3b8; font-size:0.85rem; text-align:center; margin-top:20px;">Nessuna attività registrata.</div>';
+    `).join('') : '<p style="color:#94a3b8; font-size:0.9rem; text-align:center;">Nessun articolo.</p>';
+
+    document.getElementById('goods-chat').innerHTML = goodsLogs.length ? goodsLogs.map(l => `
+      <div class="chat-msg"><span class="time">[${l.time}]</span> ${l.msg}</div>
+    `).join('') : '<div style="color:#94a3b8; font-size:0.85rem; text-align:center; margin-top:20px;">Nessuna attività.</div>';
   }
 
   // RUOTA
   function renderWheelChecklist() {
-    const container = document.getElementById('wheel-emp-checklist');
     if(wheelEmployees.length === 0) wheelEmployees = employees.map(e => e.name);
-
-    container.innerHTML = employees.map(e => `
+    document.getElementById('wheel-emp-checklist').innerHTML = employees.map(e => `
       <label style="display:flex; align-items:center; gap:8px; background:var(--table-header); padding:8px; border-radius:4px; cursor:pointer;">
         <input type="checkbox" value="${e.name}" ${wheelEmployees.includes(e.name) ? 'checked' : ''} onchange="updateWheelEmpsSelection()">
         <span>${e.name}</span>
@@ -1314,8 +1045,7 @@
   }
 
   function updateWheelEmpsSelection() {
-    const checked = Array.from(document.querySelectorAll('#wheel-emp-checklist input:checked')).map(i => i.value);
-    wheelEmployees = checked;
+    wheelEmployees = Array.from(document.querySelectorAll('#wheel-emp-checklist input:checked')).map(i => i.value);
     localStorage.setItem('hr_wheel_emps', JSON.stringify(wheelEmployees));
     drawWheel();
   }
@@ -1324,425 +1054,222 @@
     const canvas = document.getElementById('wheel-canvas');
     if(!canvas) return;
     const ctx = canvas.getContext('2d');
-    const width = canvas.width;
-    const height = canvas.height;
-    const radius = width / 2;
-
-    ctx.clearRect(0, 0, width, height);
+    const width = canvas.width; const radius = width / 2;
+    ctx.clearRect(0, 0, width, width);
 
     if(wheelEmployees.length === 0) {
-      ctx.fillStyle = '#94a3b8';
-      ctx.beginPath();
-      ctx.arc(radius, radius, radius, 0, 2 * Math.PI);
-      ctx.fill();
-      ctx.fillStyle = 'white';
-      ctx.font = '16px Segoe UI';
-      ctx.textAlign = 'center';
-      ctx.fillText('Nessun Dipendente', radius, radius);
+      ctx.fillStyle = '#94a3b8'; ctx.beginPath(); ctx.arc(radius, radius, radius, 0, 2 * Math.PI); ctx.fill();
+      ctx.fillStyle = 'white'; ctx.font = '16px Segoe UI'; ctx.textAlign = 'center'; ctx.fillText('Nessun Dipendente', radius, radius);
       return;
     }
 
     const arcSize = (2 * Math.PI) / wheelEmployees.length;
-
     for (let i = 0; i < wheelEmployees.length; i++) {
       const angle = wheelAngle + i * arcSize;
       ctx.fillStyle = wheelColors[i % wheelColors.length];
-      ctx.beginPath();
-      ctx.moveTo(radius, radius);
-      ctx.arc(radius, radius, radius, angle, angle + arcSize);
-      ctx.lineTo(radius, radius);
-      ctx.fill();
+      ctx.beginPath(); ctx.moveTo(radius, radius); ctx.arc(radius, radius, radius, angle, angle + arcSize); ctx.lineTo(radius, radius); ctx.fill();
 
-      ctx.save();
-      ctx.translate(radius, radius);
-      ctx.rotate(angle + arcSize / 2);
-      ctx.textAlign = 'right';
-      ctx.fillStyle = 'white';
-      ctx.font = 'bold 14px Segoe UI';
-      ctx.fillText(wheelEmployees[i], radius - 15, 5);
-      ctx.restore();
+      ctx.save(); ctx.translate(radius, radius); ctx.rotate(angle + arcSize / 2);
+      ctx.textAlign = 'right'; ctx.fillStyle = 'white'; ctx.font = 'bold 14px Segoe UI';
+      ctx.fillText(wheelEmployees[i], radius - 15, 5); ctx.restore();
     }
   }
 
   function spinWheel() {
     if(isSpinning || wheelEmployees.length === 0) return;
-    isSpinning = true;
-    document.getElementById('spin-btn').disabled = true;
+    isSpinning = true; document.getElementById('spin-btn').disabled = true;
 
     const spinAngle = Math.floor(Math.random() * 360) + 1440;
-    const duration = 4000;
-    const start = performance.now();
-    const startAngle = wheelAngle;
+    const duration = 4000; const start = performance.now(); const startAngle = wheelAngle;
 
     function animate(now) {
       const elapsed = now - start;
       const progress = Math.min(elapsed / duration, 1);
-      const easeOut = 1 - Math.pow(1 - progress, 3);
-      
-      wheelAngle = startAngle + (spinAngle * Math.PI / 180) * easeOut;
+      wheelAngle = startAngle + (spinAngle * Math.PI / 180) * (1 - Math.pow(1 - progress, 3));
       drawWheel();
 
-      if (progress < 1) {
-        requestAnimationFrame(animate);
-      } else {
-        isSpinning = false;
-        document.getElementById('spin-btn').disabled = false;
-        calculateWheelWinner();
+      if (progress < 1) requestAnimationFrame(animate);
+      else {
+        isSpinning = false; document.getElementById('spin-btn').disabled = false;
+        const arcSize = (2 * Math.PI) / wheelEmployees.length;
+        let norm = (1.5 * Math.PI - (wheelAngle % (2 * Math.PI))) % (2 * Math.PI);
+        if (norm < 0) norm += 2 * Math.PI;
+        const winner = wheelEmployees[Math.floor(norm / arcSize)];
+        wheelHistory.unshift({ time: new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }), winner });
+        localStorage.setItem('hr_wheel_history', JSON.stringify(wheelHistory));
+        renderWheelHistory();
+        setTimeout(() => alert(`🎉 ESTRATTO: ${winner}!`), 100);
       }
     }
-
     requestAnimationFrame(animate);
   }
 
-  function calculateWheelWinner() {
-    const arcSize = (2 * Math.PI) / wheelEmployees.length;
-    let normalizedAngle = (1.5 * Math.PI - (wheelAngle % (2 * Math.PI))) % (2 * Math.PI);
-    if (normalizedAngle < 0) normalizedAngle += 2 * Math.PI;
-
-    const winnerIndex = Math.floor(normalizedAngle / arcSize);
-    const winner = wheelEmployees[winnerIndex];
-
-    const nowStr = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-    wheelHistory.unshift({ time: nowStr, winner: winner });
-    localStorage.setItem('hr_wheel_history', JSON.stringify(wheelHistory));
-
-    renderWheelHistory();
-
-    setTimeout(() => {
-      alert(`🎉 ESTRATTO CASUALMENTE: ${winner}!`);
-    }, 100);
-  }
-
   function renderWheelHistory() {
-    const historyContainer = document.getElementById('wheel-history');
-    if(wheelHistory.length === 0) {
-      historyContainer.innerHTML = '<div style="color:#94a3b8; font-size:0.85rem; text-align:center; margin-top:20px;">Nessuna estrazione effettuata oggi.</div>';
-    } else {
-      historyContainer.innerHTML = wheelHistory.map(h => `
-        <div class="chat-msg">
-          <span class="time">[${h.time}]</span> Estratto: <strong>🎉 ${h.winner}</strong>
-        </div>
-      `).join('');
-    }
+    document.getElementById('wheel-history').innerHTML = wheelHistory.length ? wheelHistory.map(h => `
+      <div class="chat-msg"><span class="time">[${h.time}]</span> 🎉 ${h.winner}</div>
+    `).join('') : '<div style="color:#94a3b8; font-size:0.85rem; text-align:center; margin-top:20px;">Nessuna estrazione.</div>';
   }
 
-  // --- SEZIONE RIEPILOGO PRESENZE (SETTIMANALE / MENSILE + FILTRI ORDINAMENTO) ---
+  // RIEPILOGO PRESENZE
   function renderMonthlySummary() {
     const period = document.getElementById('summary-period').value;
     const sortCriteria = document.getElementById('summary-sort').value;
-    const now = new Date();
-    
-    let datesToProcess = [];
+    const now = new Date(); let datesToProcess = [];
 
     if (period === 'week') {
-      const currentDayOfWeek = now.getDay();
-      const distanceToMonday = currentDayOfWeek === 0 ? 6 : currentDayOfWeek - 1;
-      
       const monday = new Date(now);
-      monday.setDate(now.getDate() - distanceToMonday);
-
-      const tempDate = new Date(monday);
-      while (tempDate <= now) {
-        const y = tempDate.getFullYear();
-        const m = String(tempDate.getMonth() + 1).padStart(2, '0');
-        const d = String(tempDate.getDate()).padStart(2, '0');
-        datesToProcess.push(`${y}-${m}-${d}`);
-        
-        tempDate.setDate(tempDate.getDate() + 1);
+      monday.setDate(now.getDate() - (now.getDay() === 0 ? 6 : now.getDay() - 1));
+      let temp = new Date(monday);
+      while (temp <= now) {
+        datesToProcess.push(`${temp.getFullYear()}-${String(temp.getMonth() + 1).padStart(2, '0')}-${String(temp.getDate()).padStart(2, '0')}`);
+        temp.setDate(temp.getDate() + 1);
       }
-    } else if (period === 'current') {
-      const targetYear = now.getFullYear();
-      const targetMonth = now.getMonth();
-      const maxDay = now.getDate();
-
-      for (let day = 1; day <= maxDay; day++) {
-        const dateStr = `${targetYear}-${String(targetMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        datesToProcess.push(dateStr);
+    } else {
+      for (let day = 1; day <= now.getDate(); day++) {
+        datesToProcess.push(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`);
       }
     }
 
     const container = document.getElementById('table-monthly-summary');
-
     if (employees.length === 0) {
-      container.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#94a3b8;">Nessun dipendente registrato.</td></tr>';
+      container.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#94a3b8;">Nessun dipendente.</td></tr>';
       return;
     }
 
-    // Calcolo delle metriche per ciascun dipendente
-    const employeeStats = employees.map(emp => {
-      let onTimeDays = 0;
-      let lateDays = 0;
-      let absentDays = 0;
-
-      datesToProcess.forEach(dateStr => {
-        const dayLogs = clockLogs.filter(l => l.empId === emp.id && l.date === dateStr);
-
-        if (dayLogs.length === 0) {
-          absentDays++;
-        } else {
-          const hasLate = dayLogs.some(l => l.status === 'late');
-          if (hasLate) {
-            lateDays++;
-          } else {
-            onTimeDays++;
-          }
-        }
+    const stats = employees.map(emp => {
+      let onTimeDays = 0, lateDays = 0, absentDays = 0;
+      datesToProcess.forEach(dStr => {
+        const dayLogs = clockLogs.filter(l => l.empId === emp.id && l.date === dStr);
+        if (dayLogs.length === 0) absentDays++;
+        else if (dayLogs.some(l => l.status === 'late')) lateDays++;
+        else onTimeDays++;
       });
-
-      return {
-        emp,
-        onTimeDays,
-        lateDays,
-        absentDays
-      };
+      return { emp, onTimeDays, lateDays, absentDays };
     });
 
-    // Ordinamento in base al criterio selezionato
-    employeeStats.sort((a, b) => {
-      if (sortCriteria === 'puntuale') {
-        // Dal più puntuale al meno puntuale (Decrescente per presenze puntuali)
-        if (b.onTimeDays !== a.onTimeDays) return b.onTimeDays - a.onTimeDays;
-        return a.lateDays - b.lateDays; // In caso di parità, meno ritardi prima
-      } else if (sortCriteria === 'ritardi') {
-        // Da chi ha fatto più ritardi a chi ha fatto meno ritardi (Decrescente per ritardi)
-        if (b.lateDays !== a.lateDays) return b.lateDays - a.lateDays;
-        return b.absentDays - a.absentDays;
-      } else if (sortCriteria === 'assenze') {
-        // Da chi ha fatto più assenze a chi ha fatto meno assenze (Decrescente per assenze)
-        if (b.absentDays !== a.absentDays) return b.absentDays - a.absentDays;
-        return b.lateDays - a.lateDays;
-      }
-      return 0;
+    stats.sort((a, b) => {
+      if (sortCriteria === 'puntuale') return b.onTimeDays - a.onTimeDays || a.lateDays - b.lateDays;
+      if (sortCriteria === 'ritardi') return b.lateDays - a.lateDays || b.absentDays - a.absentDays;
+      return b.absentDays - a.absentDays || b.lateDays - a.lateDays;
     });
 
-    container.innerHTML = employeeStats.map(item => `
+    container.innerHTML = stats.map(s => `
       <tr>
-        <td><strong>${item.emp.name}</strong></td>
-        <td style="color: var(--present); font-weight: bold;">${item.onTimeDays} gg</td>
-        <td style="color: var(--late); font-weight: bold;">${item.lateDays} gg</td>
-        <td style="color: var(--absent); font-weight: bold;">${item.absentDays} gg</td>
+        <td><strong>${s.emp.name}</strong></td>
+        <td style="color:var(--present); font-weight:bold;">${s.onTimeDays} gg</td>
+        <td style="color:var(--late); font-weight:bold;">${s.lateDays} gg</td>
+        <td style="color:var(--absent); font-weight:bold;">${s.absentDays} gg</td>
       </tr>
     `).join('');
   }
 
-  // Modifica PIN
   function changePin(e) {
     e.preventDefault();
     const oldPin = document.getElementById('old-pin').value;
     const newPin = document.getElementById('new-pin').value;
-
-    if(oldPin !== adminPin) {
-      alert('Il PIN attuale non è corretto.');
-      return;
-    }
-
-    adminPin = newPin;
-    localStorage.setItem('hr_pin', adminPin);
-    alert('PIN aggiornato con successo!');
-    e.target.reset();
+    if(oldPin !== adminPin) return alert('PIN attuale non corretto.');
+    adminPin = newPin; localStorage.setItem('hr_pin', adminPin);
+    alert('PIN aggiornato!'); e.target.reset();
   }
 
-  // Backup & Ripristino Dati
   function downloadBackup() {
-    const backupData = {
-      pin: adminPin,
-      employees: employees,
-      clockLogs: clockLogs,
-      shifts: shifts,
-      tasks: tasks,
-      taskLogs: taskLogs,
-      goods: goods,
-      goodsLogs: goodsLogs,
-      wheelHistory: wheelHistory,
-      wheelEmployees: wheelEmployees,
-      exportDate: new Date().toISOString()
-    };
-
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
-    const downloadAnchor = document.createElement('a');
-    const todayStr = new Date().toISOString().split('T')[0];
-    downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `backup_NOM_HR_${todayStr}.json`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({
+      pin: adminPin, employees, clockLogs, shifts, tasks, taskLogs, goods, goodsLogs, wheelHistory, wheelEmployees
+    }, null, 2));
+    const anchor = document.createElement('a');
+    anchor.setAttribute("href", dataStr);
+    anchor.setAttribute("download", `backup_NOM_HR_${new Date().toISOString().split('T')[0]}.json`);
+    document.body.appendChild(anchor); anchor.click(); anchor.remove();
   }
 
   function uploadBackup(event) {
     const file = event.target.files[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = function(e) {
       try {
         const data = JSON.parse(e.target.result);
-        if (confirm("Attenzione: Il ripristino sovrascriverà i dati attuali con quelli del file selezionato. Continuare?")) {
-          if (data.pin) localStorage.setItem('hr_pin', data.pin);
+        if (confirm("Sovrascrivere i dati attuali?")) {
           if (data.employees) localStorage.setItem('hr_employees', JSON.stringify(data.employees));
           if (data.clockLogs) localStorage.setItem('hr_logs', JSON.stringify(data.clockLogs));
           if (data.shifts) localStorage.setItem('hr_shifts', JSON.stringify(data.shifts));
           if (data.tasks) localStorage.setItem('hr_tasks_v2', JSON.stringify(data.tasks));
-          if (data.taskLogs) localStorage.setItem('hr_task_logs', JSON.stringify(data.taskLogs));
-          if (data.goods) localStorage.setItem('hr_goods', JSON.stringify(data.goods));
-          if (data.goodsLogs) localStorage.setItem('hr_goods_logs', JSON.stringify(data.goodsLogs));
-          if (data.wheelHistory) localStorage.setItem('hr_wheel_history', JSON.stringify(data.wheelHistory));
-          if (data.wheelEmployees) localStorage.setItem('hr_wheel_emps', JSON.stringify(data.wheelEmployees));
-
-          adminPin = localStorage.getItem('hr_pin') || '0104';
           employees = JSON.parse(localStorage.getItem('hr_employees')) || [];
           clockLogs = JSON.parse(localStorage.getItem('hr_logs')) || [];
           shifts = JSON.parse(localStorage.getItem('hr_shifts')) || [];
           tasks = JSON.parse(localStorage.getItem('hr_tasks_v2')) || [];
-          taskLogs = JSON.parse(localStorage.getItem('hr_task_logs')) || [];
-          goods = JSON.parse(localStorage.getItem('hr_goods')) || [];
-          goodsLogs = JSON.parse(localStorage.getItem('hr_goods_logs')) || [];
-          wheelHistory = JSON.parse(localStorage.getItem('hr_wheel_history')) || [];
-          wheelEmployees = JSON.parse(localStorage.getItem('hr_wheel_emps')) || [];
-
-          alert("Dati ripristinati con successo!");
-          renderAll();
+          alert("Ripristino completato!"); renderAll();
         }
-      } catch (err) {
-        alert("Errore durante la lettura del file di backup. Assicurati che sia un file .json valido.");
-      }
+      } catch (err) { alert("File non valido."); }
     };
     reader.readAsText(file);
   }
 
-  // Esportazione
   function exportPresenzeData() {
-    const startDate = document.getElementById('export-start-date').value;
-    const endDate = document.getElementById('export-end-date').value;
-    const format = document.getElementById('export-format').value;
-
+    const start = document.getElementById('export-start-date').value;
+    const end = document.getElementById('export-end-date').value;
     let filtered = clockLogs;
+    if(start) filtered = filtered.filter(l => l.date >= start);
+    if(end) filtered = filtered.filter(l => l.date <= end);
+    if(filtered.length === 0) return alert('Nessun dato trovato.');
 
-    if(startDate) {
-      filtered = filtered.filter(l => l.date >= startDate);
-    }
-    if(endDate) {
-      filtered = filtered.filter(l => l.date <= endDate);
-    }
-
-    if(filtered.length === 0) {
-      alert('Nessun dato di presenza trovato per l\'intervallo selezionato.');
-      return;
-    }
-
-    if(format === 'csv') {
-      let csvContent = "data:text/csv;charset=utf-8,Data,Dipendente,Orario Ingresso,Orario Uscita,Stato\n";
-      filtered.forEach(l => {
-        const row = [
-          l.date,
-          `"${l.empName}"`,
-          l.inTime || l.time || '',
-          l.outTime || '',
-          l.status === 'present' ? 'In Orario' : 'In Ritardo'
-        ].join(",");
-        csvContent += row + "\n";
-      });
-
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `presenze_NOM_HR_${startDate || 'inizio'}_al_${endDate || 'fine'}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } else {
-      let excelContent = `<table border="1"><tr><th>Data</th><th>Dipendente</th><th>Ingresso</th><th>Uscita</th><th>Stato</th></tr>`;
-      filtered.forEach(l => {
-        excelContent += `<tr>
-          <td>${l.date}</td>
-          <td>${l.empName}</td>
-          <td>${l.inTime || l.time || ''}</td>
-          <td>${l.outTime || ''}</td>
-          <td>${l.status === 'present' ? 'In Orario' : 'In Ritardo'}</td>
-        </tr>`;
-      });
-      excelContent += `</table>`;
-
-      const blob = new Blob([excelContent], { type: 'application/vnd.ms-excel' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `presenze_NOM_HR_${startDate || 'inizio'}_al_${endDate || 'fine'}.xls`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
+    let csv = "data:text/csv;charset=utf-8,Data,Dipendente,Ingresso,Uscita,Stato\n";
+    filtered.forEach(l => {
+      csv += `${l.date},"${l.empName}",${l.inTime || l.time || ''},${l.outTime || ''},${l.status}\n`;
+    });
+    const anchor = document.createElement("a");
+    anchor.setAttribute("href", encodeURI(csv));
+    anchor.setAttribute("download", `presenze_${start || 'tutti'}.csv`);
+    document.body.appendChild(anchor); anchor.click(); anchor.remove();
   }
 
-  // Render Kiosk & Classifica
   function renderKioskGrid() {
     const grid = document.getElementById('kiosk-grid');
-
     const currentShiftLogs = [];
     employees.forEach(e => {
       const activeLog = getCurrentShiftLog(e.id);
       if(activeLog) currentShiftLogs.push(activeLog);
     });
 
-    currentShiftLogs.sort((a, b) => {
-      const timeA = a.inTime || a.time || '00:00';
-      const timeB = b.inTime || b.time || '00:00';
-      return timeA.localeCompare(timeB);
-    });
+    currentShiftLogs.sort((a, b) => (a.inTime || a.time || '00:00').localeCompare(b.inTime || b.time || '00:00'));
 
-    let onTimeCounter = 0;
-    const empIconMap = {};
-
+    let onTimeCounter = 0; const empIconMap = {};
     currentShiftLogs.forEach(log => {
-      if(log.status === 'late') {
-        empIconMap[log.empId] = '👎';
-      } else {
+      if(log.status === 'late') empIconMap[log.empId] = '👎';
+      else {
         onTimeCounter++;
         if(onTimeCounter === 1) empIconMap[log.empId] = '👑';
         else if(onTimeCounter === 2) empIconMap[log.empId] = '🥈';
         else if(onTimeCounter === 3) empIconMap[log.empId] = '🥉';
-        else empIconMap[log.empId] = '';
       }
     });
 
     grid.innerHTML = employees.map(e => {
       const activeLog = getCurrentShiftLog(e.id);
-      let statusClass = 'absent';
-      let statusText = 'Assente';
+      let statusClass = 'absent', statusText = 'Assente';
       const icon = empIconMap[e.id] ? ` ${empIconMap[e.id]}` : '';
 
       if(activeLog) {
         statusClass = activeLog.status;
-        const displayTime = activeLog.inTime || activeLog.time || '--:--';
-        statusText = (activeLog.status === 'present' ? 'Presente' : 'In Ritardo') + ' (' + displayTime + ')';
+        statusText = (activeLog.status === 'present' ? 'Presente' : 'In Ritardo') + ` (${activeLog.inTime || activeLog.time || '--:--'})`;
       }
 
       return `
-        <div class="emp-card ${statusClass}" 
-             style="${isCooldown ? 'opacity: 0.6; cursor: not-allowed;' : ''}"
-             onclick="performClockIn(${e.id})">
+        <div class="emp-card ${statusClass}" style="${isCooldown ? 'opacity: 0.6; cursor: not-allowed;' : ''}" onclick="performClockIn(${e.id})">
           <div class="name">${e.name}${icon}</div>
           <div class="status-time">${statusText}</div>
         </div>
       `;
     }).join('');
 
-    const leaderboardContainer = document.getElementById('table-leaderboard');
-    if(currentShiftLogs.length === 0) {
-      leaderboardContainer.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#94a3b8;">Nessuna timbratura.</td></tr>';
-    } else {
-      leaderboardContainer.innerHTML = currentShiftLogs.map((log, index) => {
-        const icon = empIconMap[log.empId] || '';
-        const displayTime = log.inTime || log.time || '--:--';
-        return `
-          <tr>
-            <td><strong>#${index + 1}</strong></td>
-            <td>${log.empName}</td>
-            <td>${displayTime}</td>
-            <td>${icon ? icon + ' ' : ''}${log.status === 'present' ? '<span style="color:var(--present); font-weight:bold;">Ok</span>' : '<span style="color:var(--late); font-weight:bold;">Ritardo</span>'}</td>
-          </tr>
-        `;
-      }).join('');
-    }
+    document.getElementById('table-leaderboard').innerHTML = currentShiftLogs.length ? currentShiftLogs.map((log, index) => `
+      <tr>
+        <td><strong>#${index + 1}</strong></td>
+        <td>${log.empName}</td>
+        <td>${log.inTime || log.time || '--:--'}</td>
+        <td>${log.status === 'present' ? '<span style="color:var(--present); font-weight:bold;">Ok</span>' : '<span style="color:var(--late); font-weight:bold;">Ritardo</span>'}</td>
+      </tr>
+    `).join('') : '<tr><td colspan="4" style="text-align:center; color:#94a3b8;">Nessuna timbratura.</td></tr>';
   }
 
   function renderTasks() {
@@ -1750,69 +1277,40 @@
       <div class="task-card ${t.done ? 'done' : 'pending'}" onclick="openTaskModal(${t.id})">
         <button class="task-delete-btn" onclick="deleteTask(${t.id}, event)">×</button>
         <div class="title">${t.title}</div>
-        <div class="assignees">
-          ${t.done ? 'Svolta da: ' + t.assignees.join(', ') : 'Da svolgere'}
-        </div>
+        <div class="assignees">${t.done ? 'Svolta da: ' + t.assignees.join(', ') : 'Da svolgere'}</div>
       </div>
     `).join('');
 
     document.getElementById('task-chat').innerHTML = taskLogs.length ? taskLogs.map(l => `
-      <div class="chat-msg">
-        <span class="time">[${l.time}]</span> ${l.msg}
-      </div>
-    `).join('') : '<div style="color:#94a3b8; font-size:0.85rem; text-align:center; margin-top:20px;">Nessuna attività registrata.</div>';
+      <div class="chat-msg"><span class="time">[${l.time}]</span> ${l.msg}</div>
+    `).join('') : '<div style="color:#94a3b8; font-size:0.85rem; text-align:center; margin-top:20px;">Nessuna attività.</div>';
 
     const assignedEmpsSet = new Set();
     tasks.filter(t => t.done).forEach(t => t.assignees.forEach(a => assignedEmpsSet.add(a)));
 
-    const assignedListContainer = document.getElementById('assigned-employees-list');
-    if(assignedEmpsSet.size === 0) {
-      assignedListContainer.innerHTML = '<div style="color:#94a3b8; font-size:0.85rem; text-align:center;">Nessuna mansione assegnata al momento.</div>';
-    } else {
-      assignedListContainer.innerHTML = Array.from(assignedEmpsSet).map(name => {
-        const taskCount = tasks.filter(t => t.done && t.assignees.includes(name)).length;
-        return `
-          <div class="assigned-emp-badge" onclick="openEmpTasksSummaryModal('${name}')">
-            <span>👤 ${name}</span>
-            <span style="font-size:0.8rem; background:var(--card-bg); padding:2px 8px; border-radius:10px;">${taskCount} mansion${taskCount > 1 ? 'i' : 'e'}</span>
-          </div>
-        `;
-      }).join('');
-    }
+    document.getElementById('assigned-employees-list').innerHTML = assignedEmpsSet.size ? Array.from(assignedEmpsSet).map(name => `
+      <div class="assigned-emp-badge" onclick="openEmpTasksSummaryModal('${name}')">
+        <span>👤 ${name}</span>
+      </div>
+    `).join('') : '<div style="color:#94a3b8; font-size:0.85rem; text-align:center;">Nessuna mansione assegnata.</div>';
   }
 
   function renderEmployeeTable() {
     document.getElementById('table-employees').innerHTML = employees.map(e => `
-      <tr>
-        <td>${e.name}</td>
-        <td>${e.role}</td>
-        <td><button onclick="deleteEmployee(${e.id})" style="background:var(--late);">Elimina</button></td>
-      </tr>
+      <tr><td>${e.name}</td><td>${e.role}</td><td><button onclick="deleteEmployee(${e.id})" style="background:var(--late);">Elimina</button></td></tr>
     `).join('');
   }
 
   function renderShiftsTable() {
     document.getElementById('table-shifts').innerHTML = shifts.map(s => `
-      <tr>
-        <td>${s.name}</td>
-        <td>${s.start}</td>
-        <td>${s.tolerance} min</td>
-        <td>${s.early || 10} min</td>
-        <td><button onclick="deleteShift(${s.id})" style="background:var(--late);">Elimina</button></td>
-      </tr>
+      <tr><td>${s.name}</td><td>${s.start}</td><td>${s.tolerance} min</td><td>${s.early || 10} min</td><td><button onclick="deleteShift(${s.id})" style="background:var(--late);">Elimina</button></td></tr>
     `).join('');
   }
 
-  // Calendario
-  function changeMonth(delta) {
-    currentCalDate.setMonth(currentCalDate.getMonth() + delta);
-    renderCalendar();
-  }
+  function changeMonth(delta) { currentCalDate.setMonth(currentCalDate.getMonth() + delta); renderCalendar(); }
 
   function renderCalendar() {
-    const year = currentCalDate.getFullYear();
-    const month = currentCalDate.getMonth();
-
+    const year = currentCalDate.getFullYear(), month = currentCalDate.getMonth();
     const monthNames = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"];
     document.getElementById('cal-month-year').textContent = `${monthNames[month]} ${year}`;
 
@@ -1820,79 +1318,45 @@
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const paddingDays = (firstDayIndex === 0 ? 6 : firstDayIndex - 1);
 
-    const daysContainer = document.getElementById('calendar-days');
-    daysContainer.innerHTML = '';
-
-    for(let i = 0; i < paddingDays; i++) {
-      daysContainer.innerHTML += `<div class="cal-day empty"></div>`;
-    }
-
+    let daysHTML = '';
+    for(let i = 0; i < paddingDays; i++) daysHTML += `<div class="cal-day empty"></div>`;
     for(let day = 1; day <= daysInMonth; day++) {
       const dStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       const hasLogs = clockLogs.some(l => l.date === dStr);
-      const isActive = dStr === selectedDateStr;
-
-      daysContainer.innerHTML += `
-        <div class="cal-day ${isActive ? 'active-day' : ''} ${hasLogs ? 'has-logs' : ''}" onclick="selectDate('${dStr}')">
-          ${day}
-          ${hasLogs ? '<div style="font-size:10px; color:var(--primary);">• presenze</div>' : ''}
+      daysHTML += `
+        <div class="cal-day ${dStr === selectedDateStr ? 'active-day' : ''} ${hasLogs ? 'has-logs' : ''}" onclick="selectDate('${dStr}')">
+          ${day} ${hasLogs ? '<div style="font-size:10px; color:var(--primary);">•</div>' : ''}
         </div>
       `;
     }
-
+    document.getElementById('calendar-days').innerHTML = daysHTML;
     renderDailyLogs();
   }
 
-  function selectDate(dStr) {
-    selectedDateStr = dStr;
-    renderCalendar();
-  }
+  function selectDate(dStr) { selectedDateStr = dStr; renderCalendar(); }
 
   function renderDailyLogs() {
     document.getElementById('selected-date-title').textContent = `Presenze del ${selectedDateStr.split('-').reverse().join('/')}`;
     const logs = clockLogs.filter(l => l.date === selectedDateStr);
-
-    document.getElementById('table-daily-logs').innerHTML = logs.length ? logs.map(l => {
-      const displayInTime = l.inTime || l.time || '--:--';
-      const displayOutTime = l.outTime || '--:--';
-      return `
-        <tr>
-          <td>${displayInTime}</td>
-          <td>${displayOutTime}</td>
-          <td>${l.empName}</td>
-          <td><span style="color: ${l.status === 'present' ? 'var(--present)' : 'var(--late)'}; font-weight: bold;">
-            ${l.status === 'present' ? 'In orario' : 'In ritardo'}
-          </span></td>
-        </tr>
-      `;
-    }).join('') : '<tr><td colspan="4">Nessuna timbratura per questa data.</td></tr>';
+    document.getElementById('table-daily-logs').innerHTML = logs.length ? logs.map(l => `
+      <tr><td>${l.inTime || l.time || '--'}</td><td>${l.outTime || '--'}</td><td>${l.empName}</td><td><span style="color:${l.status === 'present' ? 'var(--present)' : 'var(--late)'}; font-weight:bold;">${l.status === 'present' ? 'In orario' : 'Ritardo'}</span></td></tr>
+    `).join('') : '<tr><td colspan="4">Nessuna timbratura.</td></tr>';
   }
 
   function renderAll() {
     initDarkMode();
     document.getElementById('app-version-display').textContent = `Versione: ${APP_VERSION}`;
-    renderKioskGrid();
-    renderTasks();
-    renderGoods();
-    renderWheelChecklist();
-    renderWheelHistory();
-    renderMonthlySummary();
-    renderEmployeeTable();
-    renderShiftsTable();
-    renderCalendar();
+    renderKioskGrid(); renderTasks(); renderGoods(); renderWheelChecklist();
+    renderWheelHistory(); renderMonthlySummary(); renderEmployeeTable(); renderShiftsTable(); renderCalendar();
   }
 
-  // Boot
   renderAll();
 </script>
 
-<!-- REGISTRAZIONE SERVICE WORKER PWA -->
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./service-worker.js')
-        .then((reg) => console.log('Service Worker PWA Registrato con successo:', reg.scope))
-        .catch((err) => console.log('Errore registrazione Service Worker PWA:', err));
+      navigator.serviceWorker.register('./service-worker.js').catch(() => {});
     });
   }
 </script>
