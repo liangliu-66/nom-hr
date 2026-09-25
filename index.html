@@ -594,7 +594,7 @@
   // CONFIGURAZIONE SUPABASE
   const SUPABASE_URL = 'https://jxqyqwrlnyxcxgzkizqy.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4cXlxd3Jsbnl4Y3hnemtpenF5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg2MjM5NzMsImV4cCI6MjEwNDE5OTk3M30.IUifS9i0ZSFyhVug3WJa9sKNf_GY8UM8LWOmyRHH1tI';
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   // APP VERSION CONSTANT
   const APP_VERSION = 'v11';
@@ -636,11 +636,11 @@
   // FUNZIONE DI SINCRONIZZAZIONE CON SUPABASE (CLOCK IN)
   async function syncClockInToSupabase(emp, dateObj, todayStr, status) {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseClient
         .from('time_clocks')
         .insert([
           { 
-            staff_id: emp.id, 
+            employee_name: emp.name, 
             clock_in: dateObj.toISOString(), 
             status: status 
           }
@@ -891,30 +891,36 @@
   }
 
   async function executeConfirmedClockIn() {
-  if(!targetEmpForClockInId) return;
+    if(!targetEmpForClockInId) return;
 
-  const emp = employees.find(e => e.id === targetEmpForClockInId);
-  const now = new Date();
-  const todayStr = now.toISOString().split('T')[0];
+    const emp = employees.find(e => e.id === targetEmpForClockInId);
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
 
-  if(emp) {
-    const isLate = createClockInRecord(emp, now, todayStr);
+    if(emp) {
+      const isLate = createClockInRecord(emp, now, todayStr);
 
-    // Inviamo direttamente il nome a Supabase!
-    try {
-      const { error } = await supabase
-        .from('time_clocks')
-        .insert([
-          { 
-            employee_name: emp.name, // Nome preso dal PC
-            clock_in: now.toISOString(), 
-            status: isLate ? 'late' : 'present'
-          }
-        ]);
-      if (error) console.error('Errore Supabase:', error.message);
-    } catch (err) {
-      console.error('Eccezione:', err);
+      try {
+        const { error } = await supabaseClient
+          .from('time_clocks')
+          .insert([
+            { 
+              employee_name: emp.name, 
+              clock_in: now.toISOString(), 
+              status: isLate ? 'late' : 'present'
+            }
+          ]);
+        if (error) console.error('Errore Supabase:', error.message);
+      } catch (err) {
+        console.error('Eccezione:', err);
+      }
+
+      playClockInBeep(isLate);
+      closeConfirmClockModal();
+      startCooldown();
+      renderAll();
     }
+  }
 
     playClockInBeep(isLate);
     closeConfirmClockModal();
