@@ -891,21 +891,37 @@
   }
 
   async function executeConfirmedClockIn() {
-    if(!targetEmpForClockInId) return;
+  if(!targetEmpForClockInId) return;
 
-    const emp = employees.find(e => e.id === targetEmpForClockInId);
-    const now = new Date();
-    const todayStr = now.toISOString().split('T')[0];
+  const emp = employees.find(e => e.id === targetEmpForClockInId);
+  const now = new Date();
+  const todayStr = now.toISOString().split('T')[0];
 
-    if(emp) {
-      const isLate = createClockInRecord(emp, now, todayStr);
-      await syncClockInToSupabase(emp, now, todayStr, isLate ? 'late' : 'present');
-      playClockInBeep(isLate);
-      closeConfirmClockModal();
-      startCooldown();
-      renderAll();
+  if(emp) {
+    const isLate = createClockInRecord(emp, now, todayStr);
+
+    // Inviamo direttamente il nome a Supabase!
+    try {
+      const { error } = await supabase
+        .from('time_clocks')
+        .insert([
+          { 
+            employee_name: emp.name, // Nome preso dal PC
+            clock_in: now.toISOString(), 
+            status: isLate ? 'late' : 'present'
+          }
+        ]);
+      if (error) console.error('Errore Supabase:', error.message);
+    } catch (err) {
+      console.error('Eccezione:', err);
     }
+
+    playClockInBeep(isLate);
+    closeConfirmClockModal();
+    startCooldown();
+    renderAll();
   }
+}
 
   function isLogLate(dateObj) {
     if(shifts.length === 0) return false;
