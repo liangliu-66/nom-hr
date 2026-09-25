@@ -890,7 +890,7 @@
     targetEmpForClockInId = null;
   }
 
-  function executeConfirmedClockIn() {
+  async function executeConfirmedClockIn() {
     if(!targetEmpForClockInId) return;
 
     const emp = employees.find(e => e.id === targetEmpForClockInId);
@@ -899,7 +899,7 @@
 
     if(emp) {
       const isLate = createClockInRecord(emp, now, todayStr);
-      syncClockInToSupabase(emp, now, todayStr, isLate ? 'late' : 'present');
+      await syncClockInToSupabase(emp, now, todayStr, isLate ? 'late' : 'present');
       playClockInBeep(isLate);
       closeConfirmClockModal();
       startCooldown();
